@@ -504,7 +504,11 @@ export default function ResultPage() {
     );
   }
 
-  const { summary, maliciousComments } = result;
+  const { summary } = result;
+  // maliciousComments를 score >= 20 기준으로 재필터 (기존 캐시 호환)
+  const maliciousComments = result.comments
+    ? result.comments.filter((c) => c.toxicityScore >= 20)
+    : result.maliciousComments;
   const toxicCount = result.toxicComments   ?? maliciousComments.length;
   const cleanCount = result.cleanComments   ?? (result.totalComments - maliciousComments.length);
   const toxicPct   = result.toxicPercentage ?? (
@@ -713,6 +717,7 @@ export default function ResultPage() {
                         data={categoryData}
                         selectedId={selectedCategory}
                         onSelect={handleCategorySelect}
+                        centerValue={toxicCount}
                       />
                     </div>
 

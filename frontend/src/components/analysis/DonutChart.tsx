@@ -11,9 +11,11 @@ interface DonutChartProps {
   data: DonutChartData[];
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  centerValue?: number;
+  centerLabel?: string;
 }
 
-export default function DonutChart({ data, selectedId, onSelect }: DonutChartProps) {
+export default function DonutChart({ data, selectedId, onSelect, centerValue, centerLabel }: DonutChartProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const centerX = 200;
   const centerY = 200;
@@ -121,10 +123,10 @@ export default function DonutChart({ data, selectedId, onSelect }: DonutChartPro
         ) : (
           <>
             <span className="text-2xl font-bold leading-none" style={{ color: "var(--text-primary)" }}>
-              {total}
+              {centerValue ?? total}
             </span>
             <span className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              전체 악성 댓글
+              {centerLabel ?? "전체 악성 댓글"}
             </span>
           </>
         )}
