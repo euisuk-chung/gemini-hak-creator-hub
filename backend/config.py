@@ -12,7 +12,7 @@ load_dotenv(_env_path)
 class Settings(BaseSettings):
     youtube_api_key: str = Field(default="")
     google_api_key: str = Field(default="")
-    gemini_model: str = Field(default="gemini-2.0-flash")
+    gemini_model: str = Field(default="gemini-3-flash-preview")
 
     # Rule pre-screen 임계값 (이 점수 미만이고 카테고리 없으면 AI 스킵)
     prescreen_threshold: int = Field(default=20)

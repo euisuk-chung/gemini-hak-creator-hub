@@ -2,6 +2,8 @@
 
 > **Google Gemini Hackathon** 출품작 | K-POP × Social Good × AI
 
+**DO NOT FIX FRONT-END** (/frontend)
+
 ---
 
 ## 0. 에이전트 공용 설정
