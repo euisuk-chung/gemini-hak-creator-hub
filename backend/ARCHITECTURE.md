@@ -47,7 +47,7 @@ graph TB
     end
 
     API --> EP1 & EP2
-    EP1 --> LangGraph
+    EP1 --> FT
     EP2 -->|단일 댓글 래핑| PS
 
     FT -->|자막 수집| YT_TR
@@ -242,42 +242,43 @@ flowchart LR
         VU["video_url"]
     end
 
-    subgraph FT["fetch_transcript"]
+    subgraph Step1["fetch_transcript"]
         VID["video_id"]
-        TR["transcript (자막 원문)"]
+        TR["transcript"]
     end
 
-    subgraph FC["fetch_comments"]
+    subgraph Step2["fetch_comments"]
         CM["comments"]
     end
 
-    subgraph Prescreen["prescreen (Rule 엔진)"]
+    subgraph Step3["prescreen"]
         PR["prescreen_results"]
         SC["safe_comments"]
         SU["suspect_comments"]
     end
 
-    subgraph Analyze["analyze (Gemini LLM)"]
+    subgraph Step4["analyze"]
         SP["3등분 샘플링"]
         LLM_R["llm_results"]
     end
 
-    subgraph Validate["validate (교차검증)"]
+    subgraph Step5["validate"]
         TC["tagged_comments"]
         SM["summary"]
     end
 
-    VU --> FT
-    VID -->|video_id 전달| FC
+    VU --> VID
+    VU --> TR
+    VID --> CM
     CM --> PR
     PR --> SC
     PR --> SU
-    TR -->|맥락 제공| SP
+    TR --> SP
     SU --> SP
     SP --> LLM_R
     SC --> TC
     LLM_R --> TC
-    PR -->|prescreen_results| Validate
+    PR --> TC
     TC --> SM
 ```
 
