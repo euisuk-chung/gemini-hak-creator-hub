@@ -697,7 +697,7 @@ backend/
 |------|------|------|------|
 | `YOUTUBE_API_KEY` | `/analyze` 사용 시 | YouTube Data API v3 | 댓글 수집에 필요 |
 | `GOOGLE_API_KEY` | LLM 분석 시 | Gemini API | 없으면 Rule-only 폴백 |
-| `GEMINI_MODEL` | 아니오 | 모델명 (기본: `gemini-3-flash-preview`) | 비용/속도 조절 가능 |
+| `GEMINI_MODEL` | 아니오 | 모델명 (기본: `gemini-2.5-flash-preview`) | 비용/속도 조절 가능 |
 
 ---
 

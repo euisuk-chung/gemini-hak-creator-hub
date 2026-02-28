@@ -35,6 +35,14 @@ export interface AnalysisResult {
   channelTitle: string;
   totalComments: number;
   analyzedComments: number;
+  /** 독성 댓글 수 (toxicityScore >= 40) */
+  toxicComments: number;
+  /** 독성 비율 (0–100, 소수점 1자리) */
+  toxicPercentage: number;
+  /** 정상 댓글 수 */
+  cleanComments: number;
+  /** 정상 비율 (0–100, 소수점 1자리) */
+  cleanPercentage: number;
   summary: {
     overallToxicityScore: number;
     toxicityLevel: ToxicityLevel;
@@ -43,6 +51,7 @@ export interface AnalysisResult {
     moderateCount: number;
     severeCount: number;
     criticalCount: number;
+    /** CLEAN 카테고리를 제외한 독성 카테고리만 포함 */
     categoryBreakdown: { category: ToxicityCategory; count: number }[];
     insight: string;
   };

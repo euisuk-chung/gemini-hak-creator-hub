@@ -231,13 +231,13 @@ npm run dev
 |------|------|------|
 | `YOUTUBE_API_KEY` | YouTube Data API v3 키 | `AIzaSy...` |
 | `GOOGLE_API_KEY` | Gemini API 키 | `AIzaSy...` |
-| `GEMINI_MODEL` | Gemini 모델명 | `gemini-2.0-flash` |
+| `GEMINI_MODEL` | Gemini 모델명 | `gemini-2.5-flash` |
 
 ```bash
 # .env (프로젝트 루트)
 YOUTUBE_API_KEY=your_youtube_api_key
 GOOGLE_API_KEY=your_google_api_key
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 > - `.env`에 키가 설정되어 있으면 UI에서 비워둘 수 있습니다.

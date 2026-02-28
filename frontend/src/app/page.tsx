@@ -94,6 +94,13 @@ export default function Home() {
         throw new Error(data.error || "분석에 실패했습니다.");
       }
 
+      // 인메모리 스토어 초기화(핫 리로드 등) 대비: 클라이언트에도 캐시
+      try {
+        sessionStorage.setItem(`result-${data.id}`, JSON.stringify(data));
+      } catch {
+        // sessionStorage 쓰기 실패는 무시 (private 모드 등)
+      }
+
       router.push(`/result/${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
