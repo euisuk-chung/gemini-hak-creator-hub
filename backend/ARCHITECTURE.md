@@ -242,23 +242,24 @@ flowchart LR
         VU["video_url"]
     end
 
-    subgraph Fetch
+    subgraph Fetch["fetch_transcript + fetch_comments"]
         VID["video_id"]
-        TR["transcript"]
+        TR["transcript (자막 원문)"]
         CM["comments"]
     end
 
-    subgraph Prescreen
+    subgraph Prescreen["prescreen (Rule 엔진)"]
         PR["prescreen_results"]
         SC["safe_comments"]
         SU["suspect_comments"]
     end
 
-    subgraph LLM
+    subgraph Analyze["analyze (Gemini LLM)"]
+        SP["3등분 샘플링"]
         LLM_R["llm_results"]
     end
 
-    subgraph Output
+    subgraph Validate["validate (교차검증)"]
         TC["tagged_comments"]
         SM["summary"]
     end
@@ -269,11 +270,21 @@ flowchart LR
     CM --> PR
     PR --> SC
     PR --> SU
-    SU --> LLM_R
+    TR -->|맥락 제공| SP
+    SU --> SP
+    SP --> LLM_R
     SC --> TC
     LLM_R --> TC
     TC --> SM
 ```
+
+**핵심 흐름: transcript는 어떻게 LLM에 전달되는가?**
+
+1. `fetch_transcript` 노드가 YouTube 자막 원문을 수집 → state의 `transcript`에 저장
+2. `analyze` 노드가 state에서 `transcript`와 `suspect_comments`를 함께 읽음
+3. transcript가 2000자 초과 시 **3등분 샘플링** (앞/중간/끝 각 ~666자)
+4. 샘플링된 transcript + 댓글 텍스트를 합쳐 LLM에 전달
+5. LLM이 영상 맥락을 고려하여 댓글 독성 분석
 
 **State 필드별 설명:**
 
@@ -286,7 +297,7 @@ flowchart LR
 | Prescreen | `prescreen_results` | `PrescreenResult[]` | 각 댓글의 Rule 분석 결과 (score, categories, patterns) |
 | | `safe_comments` | `CommentRaw[]` | Rule에서 안전 판정된 댓글 (LLM 스킵 대상) |
 | | `suspect_comments` | `CommentRaw[]` | LLM 분석이 필요한 댓글 |
-| LLM | `llm_results` | `dict[]` | Gemini가 반환한 구조화 분석 결과 |
+| Analyze | `llm_results` | `dict[]` | Gemini가 반환한 구조화 분석 결과 |
 | Output | `tagged_comments` | `TaggedComment[]` | 최종 태깅 완료된 전체 댓글 |
 | | `summary` | `dict` | 집계 통계 (독성 비율, 카테고리 분포, skip ratio 등) |
 
@@ -429,7 +440,7 @@ flowchart LR
 
 ## 디렉토리 구조
 
-```
+```text
 backend/
 ├── main.py                    # FastAPI 앱 + 엔드포인트
 ├── config.py                  # Settings (env vars, thresholds)
@@ -444,9 +455,17 @@ backend/
 │       ├── analyze.py         # Gemini LLM 구조화 출력
 │       └── validate.py        # Rule↔LLM 교차검증 + 최종 태깅
 │
-├── llm/                       # LLM 모듈
+├── prompts/                   # 프롬프트 관리 모듈
+│   ├── loader.py              # 템플릿 로더 (파일 → 문자열, LRU 캐싱)
+│   ├── builders.py            # 프롬프트 조립 (transcript 샘플링 + 빌드)
+│   └── templates/             # 프롬프트 원문 (.md)
+│       ├── comment_tagging_system.md      # 시스템 프롬프트
+│       ├── comment_analysis_user.md       # 유저 프롬프트 (맥락 포함)
+│       └── comment_analysis_user_no_context.md  # 유저 프롬프트 (맥락 없음)
+│
+├── llm/                       # LLM 클라이언트
 │   ├── gemini.py              # ChatGoogleGenerativeAI 설정
-│   ├── prompts.py             # 시스템 프롬프트 (한국어, transcript 맥락)
+│   ├── prompts.py             # → backend/prompts 리다이렉트 (하위 호환)
 │   └── schemas.py             # CommentTagging Pydantic 모델
 │
 └── models/
