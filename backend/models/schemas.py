@@ -64,6 +64,8 @@ class AnalyzeVideoResponse(BaseModel):
     """전체 영상 분석 응답."""
 
     video_id: str
+    video_title: str = ""
+    channel_title: str = ""
     transcript_length: int
     total_comments: int
     tagged_comments: list[TaggedCommentResponse]

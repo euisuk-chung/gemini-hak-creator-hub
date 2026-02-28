@@ -57,6 +57,8 @@ async def analyze_video(req: AnalyzeVideoRequest):
 
     return AnalyzeVideoResponse(
         video_id=result.get("video_id", ""),
+        video_title=result.get("video_title", ""),
+        channel_title=result.get("channel_title", ""),
         transcript_length=len(result.get("transcript", "")),
         total_comments=len(tagged),
         tagged_comments=[TaggedCommentResponse(**t) for t in tagged],

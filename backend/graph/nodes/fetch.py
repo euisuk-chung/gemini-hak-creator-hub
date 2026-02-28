@@ -34,23 +34,28 @@ def extract_video_id(url: str) -> str:
     raise ValueError(f"유효한 YouTube URL이 아닙니다: {url}")
 
 
-def _fetch_video_title(video_id: str) -> str:
-    """YouTube Data API로 영상 제목 가져오기."""
+def _fetch_video_info(video_id: str) -> tuple[str, str]:
+    """YouTube Data API로 영상 제목과 채널명 가져오기.
+
+    Returns:
+        (video_title, channel_title) 튜플. 실패 시 빈 문자열.
+    """
     if not settings.youtube_api_key:
-        return ""
+        return "", ""
     try:
         youtube = build_youtube_client(settings.youtube_api_key)
         resp = youtube.videos().list(part="snippet", id=video_id).execute()
         items = resp.get("items", [])
         if items:
-            return items[0]["snippet"]["title"]
+            snippet = items[0]["snippet"]
+            return snippet.get("title", ""), snippet.get("channelTitle", "")
     except Exception:
         pass
-    return ""
+    return "", ""
 
 
 def fetch_transcript_node(state: PipelineState) -> dict:
-    """YouTube 자막 + 제목 수집 노드."""
+    """YouTube 자막 + 제목 + 채널명 수집 노드."""
     video_id = extract_video_id(state["video_url"])
 
     transcript_text = ""
@@ -63,11 +68,12 @@ def fetch_transcript_node(state: PipelineState) -> dict:
         # 자막이 없는 경우 빈 문자열 (파이프라인은 계속 진행)
         transcript_text = ""
 
-    video_title = _fetch_video_title(video_id)
+    video_title, channel_title = _fetch_video_info(video_id)
 
     return {
         "video_id": video_id,
         "video_title": video_title,
+        "channel_title": channel_title,
         "transcript": transcript_text,
     }
 

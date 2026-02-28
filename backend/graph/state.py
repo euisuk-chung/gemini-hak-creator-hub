@@ -53,6 +53,7 @@ class PipelineState(TypedDict, total=False):
 
     # 수집 데이터
     video_title: str
+    channel_title: str
     transcript: str
     comments: list[CommentRaw]
 
