@@ -505,9 +505,9 @@ export default function ResultPage() {
   }
 
   const { summary } = result;
-  // maliciousComments를 score >= 20 기준으로 재필터 (기존 캐시 호환)
+  // maliciousComments를 score >= 30 기준으로 재필터 (기존 캐시 호환, 백엔드 기준 동일)
   const maliciousComments = result.comments
-    ? result.comments.filter((c) => c.toxicityScore >= 20)
+    ? result.comments.filter((c) => c.toxicityScore >= 30)
     : result.maliciousComments;
   const toxicCount = result.toxicComments   ?? maliciousComments.length;
   const cleanCount = result.cleanComments   ?? (result.totalComments - maliciousComments.length);
