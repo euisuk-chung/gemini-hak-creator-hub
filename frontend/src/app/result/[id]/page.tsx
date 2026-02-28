@@ -226,17 +226,30 @@ export default function ResultPage() {
   useEffect(() => {
     async function fetchResult() {
       try {
-        const res = await fetch(`/api/result/${id}`);
-        if (!res.ok) throw new Error("결과를 찾을 수 없습니다.");
-        const data = await res.json();
-        setResult(data.result);
+        // 1) sessionStorage 캐시 우선 확인 (핫 리로드·서버 재시작 대비)
+        let data: { result: AnalysisResult } | null = null;
+        try {
+          const cached = sessionStorage.getItem(`result-${id}`);
+          if (cached) data = JSON.parse(cached);
+        } catch {
+          // sessionStorage 읽기 실패는 무시
+        }
+
+        // 2) 캐시 없으면 API 호출
+        if (!data) {
+          const res = await fetch(`/api/result/${id}`);
+          if (!res.ok) throw new Error("결과를 찾을 수 없습니다. 새로 분석해 주세요.");
+          data = await res.json();
+        }
+
+        setResult(data!.result);
 
         try {
           const videoRes = await fetch("/api/youtube/fetch-test", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              videoUrl: `https://youtube.com/watch?v=${data.result.videoId}`,
+              videoUrl: `https://youtube.com/watch?v=${data!.result.videoId}`,
               targets: ["detail"],
             }),
           });
@@ -298,10 +311,16 @@ export default function ResultPage() {
   }
 
   const { summary, maliciousComments } = result;
-  const maliciousRatio = result.totalComments > 0
-    ? Math.round((maliciousComments.length / result.totalComments) * 100)
-    : 0;
-  const riskConfig = getRiskConfig(summary.overallToxicityScore);
+  // API가 계산한 값을 우선 사용하고, 구버전 데이터 호환을 위해 fallback 계산
+  const toxicCount   = result.toxicComments   ?? maliciousComments.length;
+  const cleanCount   = result.cleanComments   ?? (result.totalComments - maliciousComments.length);
+  const toxicPct     = result.toxicPercentage ?? (
+    result.totalComments > 0
+      ? Math.round((maliciousComments.length / result.totalComments) * 100)
+      : 0
+  );
+  const cleanPct     = result.cleanPercentage ?? (result.totalComments > 0 ? Math.round(100 - toxicPct) : 0);
+  const riskConfig   = getRiskConfig(summary.overallToxicityScore);
 
   const categoryData = summary.categoryBreakdown
     .map((cb) => {
@@ -414,11 +433,24 @@ export default function ResultPage() {
                   </div>
 
                   {/* Stat row */}
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { label: "총 댓글", value: result.totalComments.toLocaleString() },
-                      { label: "악성 댓글", value: maliciousComments.length.toLocaleString(), danger: true },
-                      { label: "악성 비율", value: `${maliciousRatio}%`, danger: maliciousRatio > 20 },
+                      { label: "총 댓글", value: result.totalComments.toLocaleString(), color: "var(--text-primary)" },
+                      {
+                        label: "정상 댓글",
+                        value: `${cleanCount.toLocaleString()}개 (${cleanPct}%)`,
+                        color: "var(--success)",
+                      },
+                      {
+                        label: "악성 댓글",
+                        value: toxicCount.toLocaleString(),
+                        color: "var(--danger)",
+                      },
+                      {
+                        label: "악성 비율",
+                        value: `${toxicPct}%`,
+                        color: toxicPct > 20 ? "var(--danger)" : "var(--warning)",
+                      },
                     ].map((s) => (
                       <div
                         key={s.label}
@@ -426,7 +458,7 @@ export default function ResultPage() {
                         style={{ background: "var(--surface-2)", border: "1px solid var(--border-color)" }}
                       >
                         <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{s.label}</p>
-                        <p className="text-xl font-bold" style={{ color: s.danger ? "var(--danger)" : "var(--text-primary)" }}>{s.value}</p>
+                        <p className="text-lg font-bold leading-tight" style={{ color: s.color }}>{s.value}</p>
                       </div>
                     ))}
                   </div>
@@ -450,7 +482,7 @@ export default function ResultPage() {
               <div className="mb-5">
                 <h3 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>유형별 분류</h3>
                 <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-                  악성 댓글 {maliciousComments.length}개를 {categoryData.length}개 카테고리로 분류
+                  악성 댓글 {toxicCount}개 ({toxicPct}%) · {categoryData.length}개 카테고리로 분류
                 </p>
               </div>
               <div className="flex flex-col lg:flex-row gap-6 items-center">

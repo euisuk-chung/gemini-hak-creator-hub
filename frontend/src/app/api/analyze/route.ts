@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server';
 import { extractVideoId, getVideoInfo, fetchComments } from '@/lib/youtube';
 import { analyzeComments } from '@/lib/gemini';
 import { saveResult } from '@/lib/result-store';
-import { getLevelFromScore } from '@/lib/toxicity-constants';
+import { getLevelFromScore, TOXICITY_CATEGORIES } from '@/lib/toxicity-constants';
 import type { CommentAnalysis, AnalysisResult, ToxicityCategory } from '@/lib/toxicity-types';
+
+/** 유효한 독성 카테고리 ID 집합 (CLEAN 등 비정의 값 필터용) */
+const VALID_CATEGORY_IDS = new Set<string>(TOXICITY_CATEGORIES.map((c) => c.id));
 
 export async function POST(request: Request) {
   try {
@@ -103,18 +106,38 @@ export async function POST(request: Request) {
       (c) => c.toxicityScore >= 40
     );
 
-    const safeCount = comments.filter((c) => c.toxicityLevel === 'safe').length;
-    const mildCount = comments.filter((c) => c.toxicityLevel === 'mild').length;
+    const total = rawComments.length;
+    const toxicCount = maliciousComments.length;
+    const cleanCount = total - toxicCount;
+
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+    const toxicPercentage  = total > 0 ? round1((toxicCount / total) * 100) : 0;
+    const cleanPercentage  = total > 0 ? round1((cleanCount / total) * 100) : 0;
+
+    const safeCount     = comments.filter((c) => c.toxicityLevel === 'safe').length;
+    const mildCount     = comments.filter((c) => c.toxicityLevel === 'mild').length;
     const moderateCount = comments.filter((c) => c.toxicityLevel === 'moderate').length;
-    const severeCount = comments.filter((c) => c.toxicityLevel === 'severe').length;
+    const severeCount   = comments.filter((c) => c.toxicityLevel === 'severe').length;
     const criticalCount = comments.filter((c) => c.toxicityLevel === 'critical').length;
+
+    // CLEAN 등 정의되지 않은 카테고리를 categoryBreakdown에서 제거
+    const categoryBreakdown = geminiResult.summary.categoryBreakdown
+      .filter((cb) => VALID_CATEGORY_IDS.has(cb.category))
+      .map((cb) => ({
+        category: cb.category as ToxicityCategory,
+        count: cb.count,
+      }));
 
     const result: AnalysisResult = {
       videoId,
       videoTitle: videoInfo.title,
       channelTitle: videoInfo.channelTitle,
-      totalComments: rawComments.length,
+      totalComments: total,
       analyzedComments: comments.length,
+      toxicComments: toxicCount,
+      toxicPercentage,
+      cleanComments: cleanCount,
+      cleanPercentage,
       summary: {
         overallToxicityScore: geminiResult.summary.overallToxicityScore,
         toxicityLevel: getLevelFromScore(geminiResult.summary.overallToxicityScore),
@@ -123,10 +146,7 @@ export async function POST(request: Request) {
         moderateCount,
         severeCount,
         criticalCount,
-        categoryBreakdown: geminiResult.summary.categoryBreakdown.map((cb) => ({
-          category: cb.category as ToxicityCategory,
-          count: cb.count,
-        })),
+        categoryBreakdown,
         insight: geminiResult.summary.insight,
       },
       comments,

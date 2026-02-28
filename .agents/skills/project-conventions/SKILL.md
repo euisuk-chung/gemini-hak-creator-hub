@@ -35,6 +35,6 @@ frontend/src/
 - 클라이언트 컴포넌트: `"use client"` 명시
 - 스타일: Tailwind CSS 유틸리티 클래스, CSS 변수(`--accent`, `--accent-light`)
 - 애니메이션: Framer Motion (`motion.div`, `whileHover`, `whileTap`)
-- AI: Google Gemini (`@google/generative-ai`, `gemini-2.0-flash`)
+- AI: Google Gemini (`@google/generative-ai`, `gemini-2.5-flash`)
 - 경로 alias: `@/*` → `./src/*`
 - 언어: 한국어 UI
