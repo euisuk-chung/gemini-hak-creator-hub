@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install pymupdf)",
+      "Bash(python -c \":*)",
+      "Bash(uv add pymupdf)",
+      "Bash(uv run python -c \":*)",
+      "Bash(ls -lh /d/repo/NVC-chat-talk/*.txt)",
+      "Bash(wc -l /d/repo/NVC-chat-talk/nvc_ch*.txt)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --yes)"
+    ]
+  }
+}
