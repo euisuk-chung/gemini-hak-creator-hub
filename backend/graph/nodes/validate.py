@@ -53,7 +53,7 @@ def validate_node(state: PipelineState) -> dict:
             "like_count": comment["like_count"],
             "toxicity_score": score,
             "toxicity_level": _get_level(score),
-            "categories": pr["matched_categories"] if pr else [],
+            "categories": pr["matched_categories"] if pr and pr["matched_categories"] else ["CLEAN"],
             "explanation": "",
             "suggestion": None,
             "analysis_source": "rule_only",
@@ -88,7 +88,7 @@ def validate_node(state: PipelineState) -> dict:
                 "like_count": comment["like_count"],
                 "toxicity_score": final_score,
                 "toxicity_level": _get_level(final_score),
-                "categories": merged_categories,
+                "categories": merged_categories if merged_categories else ["CLEAN"],
                 "explanation": lr.get("explanation", ""),
                 "suggestion": lr.get("suggestion"),
                 "analysis_source": "llm+rule",
@@ -103,7 +103,7 @@ def validate_node(state: PipelineState) -> dict:
                 "like_count": comment["like_count"],
                 "toxicity_score": rule_score,
                 "toxicity_level": _get_level(rule_score),
-                "categories": rule_categories,
+                "categories": rule_categories if rule_categories else ["CLEAN"],
                 "explanation": lr.get("explanation", "") if lr else "",
                 "suggestion": None,
                 "analysis_source": "rule_only",
@@ -119,13 +119,18 @@ def validate_node(state: PipelineState) -> dict:
     for t in tagged:
         level_dist[t["toxicity_level"]] = level_dist.get(t["toxicity_level"], 0) + 1
         for cat in t["categories"]:
-            category_dist[cat] = category_dist.get(cat, 0) + 1
+            if cat != "CLEAN":
+                category_dist[cat] = category_dist.get(cat, 0) + 1
 
     skipped = len(safe_comments)
     analyzed = len(suspect_comments)
 
+    clean_count = sum(1 for t in tagged if "CLEAN" in t["categories"])
+
     summary = {
         "total_comments": total,
+        "clean_comments": clean_count,
+        "clean_percentage": round(clean_count / total * 100, 1) if total else 0,
         "toxic_comments": toxic_count,
         "toxic_percentage": round(toxic_count / total * 100, 1) if total else 0,
         "average_toxicity_score": avg_score,

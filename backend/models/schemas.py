@@ -50,6 +50,8 @@ class SummaryResponse(BaseModel):
     """분석 요약."""
 
     total_comments: int
+    clean_comments: int
+    clean_percentage: float
     toxic_comments: int
     toxic_percentage: float
     average_toxicity_score: float

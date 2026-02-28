@@ -325,7 +325,7 @@ flowchart TD
     A --> AS[ai_score<br/>0-100]
 
     RS & AS --> M{가중 합산}
-    M --> |"ai × 0.7 + rule × 0.3"| WS[weighted_score]
+    M --> |"ai * 0.7 + rule * 0.3"| WS[weighted_score]
     WS --> FL{하한선 보장}
     FL --> |"max(weighted, ai - 10)"| FS[final_score]
 
@@ -474,47 +474,107 @@ source      = "rule_only"
 
 ---
 
-## Rule Engine 상세
+## 독성 댓글 온톨로지
 
-10개 카테고리 × 15개 탐지 규칙. `scripts/korean_profanity.py` 재사용.
+`frontend/src/logics/ontology.ts` 기반. Domain → Category → SubType 3단 계층 구조.
+
+### Domain → Category 매핑
 
 ```mermaid
 flowchart LR
-    subgraph "5 Domains"
-        D1[VERBAL_ABUSE]
-        D2[PERSONAL_TARGETING]
-        D3[GROUP_TARGETING]
-        D4[BEHAVIORAL]
-        D5[CONTENT_ABUSE]
+    subgraph D1["VERBAL_ABUSE"]
+        C1[PROFANITY]
     end
 
-    subgraph "10 Categories"
-        C1[PROFANITY]
+    subgraph D2["PERSONAL_TARGETING"]
         C2[BLAME]
         C3[MOCKERY]
         C4[PERSONAL_ATTACK]
+    end
+
+    subgraph D3["GROUP_TARGETING"]
         C5[HATE_SPEECH]
-        C6[THREAT]
-        C7[SEXUAL]
         C8[DISCRIMINATION]
         C9[FAN_WAR]
+    end
+
+    subgraph D4["BEHAVIORAL"]
+        C6[THREAT]
+        C7[SEXUAL]
+    end
+
+    subgraph D5["CONTENT_ABUSE"]
         C10[SPAM]
     end
+```
 
-    D1 --> C1
-    D2 --> C2 & C3 & C4
-    D3 --> C5 & C8 & C9
-    D4 --> C6 & C7
-    D5 --> C10
+| Domain | 설명 | 포함 카테고리 |
+|--------|------|-------------|
+| VERBAL_ABUSE | 언어 자체의 독성 | PROFANITY |
+| PERSONAL_TARGETING | 특정 개인을 겨냥 | BLAME, MOCKERY, PERSONAL_ATTACK |
+| GROUP_TARGETING | 집단/정체성을 겨냥 | HATE_SPEECH, DISCRIMINATION, FAN_WAR |
+| BEHAVIORAL | 위협적/유해 행동 | THREAT, SEXUAL |
+| CONTENT_ABUSE | 콘텐츠 악용 | SPAM |
 
-    subgraph "카테고리 관계 (severity modifier)"
-        R1["PROFANITY + THREAT → +20"]
-        R2["PROFANITY + PERSONAL_ATTACK → +15"]
-        R3["HATE_SPEECH + DISCRIMINATION → +15"]
-        R4["MOCKERY + PERSONAL_ATTACK → +10"]
-        R5["FAN_WAR + THREAT → +20"]
+### Category → SubType 매핑
+
+각 카테고리의 세부 유형. 점수 범위는 `ontology.ts`의 severity 정의 기반.
+
+| Category | SubTypes | 점수 범위 |
+|----------|----------|-----------|
+| PROFANITY | DIRECT_SWEAR, CHOSUNG_SWEAR, MORPHED_SWEAR, SLANG_SWEAR | 20-70 |
+| BLAME | BASELESS_CRITICISM, DEFAMATION, CONTENT_BASHING | 20-65 |
+| MOCKERY | SARCASM, RIDICULE, CYNICAL_EMOJI, CONSUMER_ATTACK | 20-65 |
+| PERSONAL_ATTACK | APPEARANCE_ATTACK, ABILITY_ATTACK, CHARACTER_ATTACK, PRIVACY_INVASION, BELITTLING | 40-90 |
+| HATE_SPEECH | GENDER_HATE, RACIAL_HATE, SEXUALITY_HATE, RELIGION_HATE, POLITICAL_SLUR | 40-95 |
+| THREAT | VIOLENCE_THREAT, DOXXING_THREAT, SELF_HARM_INCITE | 50-100 |
+| SEXUAL | SEXUAL_OBJECTIFY, SEXUAL_HARASS | 35-90 |
+| DISCRIMINATION | REGION_DISCRIM, AGE_DISCRIM, EDUCATION_DISCRIM, APPEARANCE_DISCRIM, GENERATION_HATE | 25-75 |
+| FAN_WAR | FANDOM_VS_FANDOM, ORGANIZED_ANTI, COMPARISON_ATTACK, DEFECTION_INCITE | 20-75 |
+| SPAM | AD_SPAM, REPETITIVE_SPAM, CLICKBAIT | 10-40 |
+
+### 카테고리 관계 (co-occurrence severity)
+
+두 카테고리가 동시 탐지되면 관계 유형에 따라 점수가 가산된다.
+
+```mermaid
+flowchart LR
+    subgraph AMPLIFIES["AMPLIFIES"]
+        A1["PROFANITY + PERSONAL_ATTACK +15"]
+        A2["PROFANITY + THREAT +20"]
+        A3["MOCKERY + PERSONAL_ATTACK +10"]
+        A4["HATE_SPEECH + DISCRIMINATION +15"]
+    end
+
+    subgraph CO_OCCURS["CO_OCCURS"]
+        B1["MOCKERY + BLAME +5"]
+        B2["PERSONAL_ATTACK + HATE_SPEECH +10"]
+        B3["FAN_WAR + MOCKERY +5"]
+        B4["FAN_WAR + PERSONAL_ATTACK +10"]
+    end
+
+    subgraph ESCALATES["ESCALATES_TO"]
+        E1["MOCKERY to PERSONAL_ATTACK +10"]
+        E2["BLAME to THREAT +15"]
+        E3["DISCRIMINATION to HATE_SPEECH +10"]
+        E4["FAN_WAR to THREAT +20"]
     end
 ```
+
+| 관계 유형 | 설명 | 예시 |
+|-----------|------|------|
+| **AMPLIFIES** | A가 B를 강화. 고의성 높음 | 욕설+위협 = 실행 의지 높은 위협 (+20) |
+| **CO_OCCURS** | 자주 함께 나타남 | 팬덤 갈등에서 아이돌 인신공격 (+10) |
+| **ESCALATES_TO** | A가 심해지면 B로 발전 | 비난이 격해지면 위협으로 (+15) |
+
+Rule Engine(`korean_profanity.py`)에서는 AMPLIFIES + CO_OCCURS 관계만 적용하여 bonus 점수를 가산.
+예) "ㅅㅂ 찾아간다" → PROFANITY(35) + THREAT(65) → AMPLIFIES +20 → 최종 85 (critical).
+
+---
+
+## Rule Engine 상세
+
+10개 카테고리 × 15개 탐지 규칙. `scripts/korean_profanity.py` 재사용.
 
 **15개 탐지 규칙 목록:**
 
