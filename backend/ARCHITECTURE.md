@@ -242,9 +242,12 @@ flowchart LR
         VU["video_url"]
     end
 
-    subgraph Fetch["fetch_transcript + fetch_comments"]
+    subgraph FT["fetch_transcript"]
         VID["video_id"]
         TR["transcript (자막 원문)"]
+    end
+
+    subgraph FC["fetch_comments"]
         CM["comments"]
     end
 
@@ -264,9 +267,8 @@ flowchart LR
         SM["summary"]
     end
 
-    VU --> VID
-    VU --> TR
-    VU --> CM
+    VU --> FT
+    VID -->|video_id 전달| FC
     CM --> PR
     PR --> SC
     PR --> SU
@@ -275,6 +277,7 @@ flowchart LR
     SP --> LLM_R
     SC --> TC
     LLM_R --> TC
+    PR -->|prescreen_results| Validate
     TC --> SM
 ```
 
