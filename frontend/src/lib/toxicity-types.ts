@@ -35,7 +35,7 @@ export interface AnalysisResult {
   channelTitle: string;
   totalComments: number;
   analyzedComments: number;
-  /** 독성 댓글 수 (toxicityScore >= 40) */
+  /** 독성 댓글 수 (toxicityScore >= 30, 백엔드 기준과 동일) */
   toxicComments: number;
   /** 독성 비율 (0–100, 소수점 1자리) */
   toxicPercentage: number;
