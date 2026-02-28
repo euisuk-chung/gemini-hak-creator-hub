@@ -153,7 +153,7 @@ export async function POST(request: Request) {
       suggestion: t.suggestion ?? undefined,
     }));
 
-    const maliciousComments = comments.filter((c) => c.toxicityScore >= 40);
+    const maliciousComments = comments.filter((c) => c.toxicityScore >= 30);
 
     const { summary: bs } = backend;
 
