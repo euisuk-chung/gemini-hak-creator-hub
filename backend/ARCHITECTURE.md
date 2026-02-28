@@ -281,27 +281,32 @@ flowchart LR
     TC --> SM
 ```
 
-**핵심 흐름: transcript는 어떻게 LLM에 전달되는가?**
+**핵심 흐름 설명:**
 
-1. `fetch_transcript` 노드가 YouTube 자막 원문을 수집 → state의 `transcript`에 저장
-2. `analyze` 노드가 state에서 `transcript`와 `suspect_comments`를 함께 읽음
-3. transcript가 2000자 초과 시 **3등분 샘플링** (앞/중간/끝 각 ~666자)
-4. 샘플링된 transcript + 댓글 텍스트를 합쳐 LLM에 전달
-5. LLM이 영상 맥락을 고려하여 댓글 독성 분석
+1. `video_url` → `fetch_transcript`가 video_id 추출 + 자막 수집 (순차 첫 번째)
+2. `video_id` → `fetch_comments`가 댓글 수집 (순차 두 번째, video_id에 의존)
+3. `comments` → `prescreen`이 Rule 분석 후 safe/suspect 분리
+4. `transcript` + `suspect_comments` → `analyze`가 3등분 샘플링 후 LLM에 맥락+댓글 전달
+5. `safe_comments` + `llm_results` + `prescreen_results` → `validate`가 교차검증 후 최종 태깅
+
+**validate가 읽는 state 필드:**
+- `safe_comments` — rule_only로 태깅
+- `suspect_comments` + `llm_results` — AI×0.7 + Rule×0.3 합산
+- `prescreen_results` — Rule 점수/카테고리를 comment_id로 조회
 
 **State 필드별 설명:**
 
 | 단계 | 필드 | 타입 | 설명 |
 |------|------|------|------|
 | Input | `video_url` | `str` | 사용자가 입력한 YouTube URL |
-| Fetch | `video_id` | `str` | URL에서 추출한 11자 video ID |
+| fetch_transcript | `video_id` | `str` | URL에서 추출한 11자 video ID |
 | | `transcript` | `str` | 영상 자막 전체 텍스트 (없으면 빈 문자열) |
-| | `comments` | `CommentRaw[]` | YouTube에서 수집한 원본 댓글 목록 |
-| Prescreen | `prescreen_results` | `PrescreenResult[]` | 각 댓글의 Rule 분석 결과 (score, categories, patterns) |
+| fetch_comments | `comments` | `CommentRaw[]` | YouTube에서 수집한 원본 댓글 목록 |
+| prescreen | `prescreen_results` | `PrescreenResult[]` | 각 댓글의 Rule 분석 결과 (score, categories, patterns) |
 | | `safe_comments` | `CommentRaw[]` | Rule에서 안전 판정된 댓글 (LLM 스킵 대상) |
 | | `suspect_comments` | `CommentRaw[]` | LLM 분석이 필요한 댓글 |
-| Analyze | `llm_results` | `dict[]` | Gemini가 반환한 구조화 분석 결과 |
-| Output | `tagged_comments` | `TaggedComment[]` | 최종 태깅 완료된 전체 댓글 |
+| analyze | `llm_results` | `dict[]` | Gemini가 반환한 구조화 분석 결과 |
+| validate | `tagged_comments` | `TaggedComment[]` | 최종 태깅 완료된 전체 댓글 |
 | | `summary` | `dict` | 집계 통계 (독성 비율, 카테고리 분포, skip ratio 등) |
 
 ---
