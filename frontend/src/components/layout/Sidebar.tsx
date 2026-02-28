@@ -13,22 +13,6 @@ const IconHome = () => (
   </svg>
 );
 
-const IconSearch = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-
-const IconChart = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="20" x2="18" y2="10" />
-    <line x1="12" y1="20" x2="12" y2="4" />
-    <line x1="6" y1="20" x2="6" y2="14" />
-    <line x1="2" y1="20" x2="22" y2="20" />
-  </svg>
-);
-
 const IconMenu = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="3" y1="12" x2="21" y2="12" />
@@ -50,22 +34,100 @@ const IconShield = () => (
   </svg>
 );
 
-// ─── Menu Config ─────────────────────────────────────────────
+const IconBarChart = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+    <line x1="2" y1="20" x2="22" y2="20" />
+  </svg>
+);
+
+const IconYoutube = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="#ff0000">
+    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+    <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/>
+  </svg>
+);
+
+// ─── Risk Score Badge ─────────────────────────────────────────
+function RiskBadge({ score }: { score: number }) {
+  const { label, color } =
+    score >= 70 ? { label: "위험", color: "#ef4444" } :
+    score >= 50 ? { label: "주의", color: "#f59e0b" } :
+    score >= 30 ? { label: "보통", color: "#3b82f6" } :
+                  { label: "안전", color: "#10b981" };
+
+  return (
+    <span
+      className="text-[10px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0"
+      style={{ background: `${color}22`, color }}
+    >
+      {score} {label}
+    </span>
+  );
+}
+
+// ─── Recent Result (읽기) ─────────────────────────────────────
+interface RecentResult {
+  id: string;
+  videoTitle: string;
+  channelTitle: string;
+  score: number;
+}
+
+function loadRecentResult(currentPathId?: string): RecentResult | null {
+  try {
+    // 현재 result 페이지 ID → lastResultId 순으로 탐색
+    const targetId = currentPathId ?? sessionStorage.getItem("lastResultId");
+    if (!targetId) return null;
+
+    const raw = sessionStorage.getItem(`result-${targetId}`);
+    if (!raw) return null;
+
+    const data = JSON.parse(raw);
+    const result = data?.result ?? data;
+    if (!result?.videoTitle) return null;
+
+    return {
+      id: targetId,
+      videoTitle: result.videoTitle ?? "",
+      channelTitle: result.channelTitle ?? "",
+      score: result.summary?.overallToxicityScore ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── Menu Items ───────────────────────────────────────────────
 const menuItems = [
-  { href: "/", label: "홈", icon: IconHome, matchFn: (p: string) => p === "/" || p.startsWith("/result") },
-  { href: "/analysis", label: "영상 분석", icon: IconSearch, matchFn: (p: string) => p === "/analysis" },
-  { href: "/summary", label: "주간 요약", icon: IconChart, matchFn: (p: string) => p === "/summary" },
+  {
+    href: "/",
+    label: "홈",
+    icon: IconHome,
+    matchFn: (p: string) => p === "/",
+  },
 ];
 
 // ─── Sidebar Content ──────────────────────────────────────────
-function SidebarContent({ isMobile, onClose }: { isMobile: boolean; onClose: () => void }) {
+function SidebarContent({
+  isMobile,
+  onClose,
+  recentResult,
+}: {
+  isMobile: boolean;
+  onClose: () => void;
+  recentResult: RecentResult | null;
+}) {
   const pathname = usePathname();
+  const isOnResult = pathname.startsWith("/result/");
 
   return (
     <div className="h-full flex flex-col" style={{ background: "var(--sidebar-bg)" }}>
       {/* Logo */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
-        <Link href="/" onClick={isMobile ? onClose : undefined} className="flex items-center gap-2.5 group">
+        <Link href="/" onClick={isMobile ? onClose : undefined} className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--accent)" }}>
             <span style={{ color: "#fff" }}>
               <IconShield />
@@ -79,7 +141,7 @@ function SidebarContent({ isMobile, onClose }: { isMobile: boolean; onClose: () 
         {isMobile && (
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg"
             style={{ color: "var(--sidebar-text)" }}
             aria-label="메뉴 닫기"
           >
@@ -89,33 +151,83 @@ function SidebarContent({ isMobile, onClose }: { isMobile: boolean; onClose: () 
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
-        <p className="text-[10px] font-semibold uppercase tracking-widest px-3 mb-3" style={{ color: "var(--sidebar-text)", opacity: 0.5 }}>
-          메뉴
-        </p>
-        {menuItems.map((item) => {
-          const isActive = item.matchFn(pathname);
-          const Icon = item.icon;
-          return (
+      <nav className="flex-1 px-4 py-5 flex flex-col gap-6 overflow-y-auto">
+
+        {/* 기본 메뉴 */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2" style={{ color: "var(--sidebar-text)", opacity: 0.4 }}>
+            메뉴
+          </p>
+          {menuItems.map((item) => {
+            const isActive = item.matchFn(pathname);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={isMobile ? onClose : undefined}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150"
+                style={{
+                  color: isActive ? "var(--sidebar-text-active)" : "var(--sidebar-text)",
+                  background: isActive ? "var(--sidebar-active-bg)" : "transparent",
+                  borderLeft: isActive ? "3px solid var(--sidebar-active-border)" : "3px solid transparent",
+                }}
+              >
+                <Icon />
+                <span>{item.label}</span>
+                {isActive && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* 최근 분석 결과 */}
+        {recentResult && (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest px-3 mb-2" style={{ color: "var(--sidebar-text)", opacity: 0.4 }}>
+              최근 분석
+            </p>
             <Link
-              key={item.href}
-              href={item.href}
+              href={`/result/${recentResult.id}`}
               onClick={isMobile ? onClose : undefined}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150"
+              className="flex flex-col gap-2 px-3 py-3 rounded-xl transition-all duration-150"
               style={{
-                color: isActive ? "var(--sidebar-text-active)" : "var(--sidebar-text)",
-                background: isActive ? "var(--sidebar-active-bg)" : "transparent",
-                borderLeft: isActive ? `3px solid var(--sidebar-active-border)` : "3px solid transparent",
+                background: isOnResult ? "var(--sidebar-active-bg)" : "rgba(255,255,255,0.04)",
+                borderLeft: isOnResult ? "3px solid var(--sidebar-active-border)" : "3px solid transparent",
+                border: isOnResult ? undefined : "1px solid rgba(255,255,255,0.06)",
               }}
             >
-              <Icon />
-              <span>{item.label}</span>
-              {isActive && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+              {/* 상단: 아이콘 + 배지 */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5" style={{ color: "var(--sidebar-text)", opacity: 0.6 }}>
+                  <IconBarChart />
+                  <span className="text-xs font-semibold" style={{ color: "var(--sidebar-text)" }}>분석 리포트</span>
+                </div>
+                <RiskBadge score={recentResult.score} />
+              </div>
+
+              {/* 영상 제목 */}
+              <p
+                className="text-xs font-medium leading-snug line-clamp-2"
+                style={{ color: isOnResult ? "var(--sidebar-text-active)" : "var(--sidebar-text)", opacity: isOnResult ? 1 : 0.75 }}
+              >
+                {recentResult.videoTitle}
+              </p>
+
+              {/* 채널명 */}
+              {recentResult.channelTitle && (
+                <div className="flex items-center gap-1">
+                  <IconYoutube />
+                  <span className="text-[10px] truncate" style={{ color: "var(--sidebar-text)", opacity: 0.45 }}>
+                    {recentResult.channelTitle}
+                  </span>
+                </div>
               )}
             </Link>
-          );
-        })}
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
@@ -131,9 +243,13 @@ function SidebarContent({ isMobile, onClose }: { isMobile: boolean; onClose: () 
 
 // ─── Main Export ──────────────────────────────────────────────
 export default function Sidebar() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [recentResult, setRecentResult] = useState<RecentResult | null>(null);
 
+  // 윈도우 크기 감지
   useEffect(() => {
     const check = () => {
       const mobile = window.innerWidth < 1024;
@@ -141,60 +257,76 @@ export default function Sidebar() {
       if (!mobile) setIsOpen(false);
     };
     check();
+    setMounted(true);
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // pathname이 바뀔 때마다 최근 분석 결과 갱신
+  useEffect(() => {
+    if (!mounted) return;
+    const match = pathname.match(/^\/result\/(.+)$/);
+    const currentId = match ? match[1] : undefined;
+
+    // 현재 result 페이지 ID가 있으면 lastResultId 업데이트
+    if (currentId) {
+      try { sessionStorage.setItem("lastResultId", currentId); } catch { /* ignore */ }
+    }
+
+    setRecentResult(loadRecentResult(currentId));
+  }, [pathname, mounted]);
+
   return (
     <>
-      {/* Mobile Hamburger */}
-      {isMobile === true && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed top-4 left-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl shadow-lg transition-all lg:hidden"
-          style={{ background: "var(--sidebar-bg)", color: "var(--sidebar-text-active)" }}
-          aria-label="메뉴 열기"
-        >
-          <IconMenu />
-        </button>
-      )}
+      {/* ── 데스크탑 사이드바 (CSS 기반 표시/숨김 → SSR 안전) ── */}
+      <aside
+        className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:z-40 lg:block"
+        style={{ width: "var(--sidebar-width)" }}
+      >
+        <SidebarContent isMobile={false} onClose={() => {}} recentResult={recentResult} />
+      </aside>
 
-      {/* Desktop Sidebar */}
-      {isMobile !== true && (
-        <aside
-          className="fixed left-0 top-0 h-screen z-40"
-          style={{ width: "var(--sidebar-width)" }}
-        >
-          <SidebarContent isMobile={false} onClose={() => {}} />
-        </aside>
-      )}
-
-      {/* Mobile Overlay + Drawer */}
-      <AnimatePresence>
-        {isMobile === true && isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-40 lg:hidden"
-              style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }}
-            />
-            <motion.aside
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 28, stiffness: 220 }}
-              className="fixed left-0 top-0 h-screen z-50 lg:hidden shadow-2xl"
-              style={{ width: "var(--sidebar-width-mobile)" }}
+      {/* ── 모바일 요소: mounted 이후에만 렌더 ── */}
+      {mounted && (
+        <>
+          {isMobile && (
+            <button
+              onClick={() => setIsOpen(true)}
+              className="fixed top-4 left-4 z-50 w-10 h-10 flex items-center justify-center rounded-xl shadow-lg lg:hidden"
+              style={{ background: "var(--sidebar-bg)", color: "var(--sidebar-text-active)" }}
+              aria-label="메뉴 열기"
             >
-              <SidebarContent isMobile={true} onClose={() => setIsOpen(false)} />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+              <IconMenu />
+            </button>
+          )}
+
+          <AnimatePresence>
+            {isMobile && isOpen && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setIsOpen(false)}
+                  className="fixed inset-0 z-40 lg:hidden"
+                  style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }}
+                />
+                <motion.aside
+                  initial={{ x: -280 }}
+                  animate={{ x: 0 }}
+                  exit={{ x: -280 }}
+                  transition={{ type: "spring", damping: 28, stiffness: 220 }}
+                  className="fixed left-0 top-0 h-screen z-50 lg:hidden shadow-2xl"
+                  style={{ width: "var(--sidebar-width-mobile)" }}
+                >
+                  <SidebarContent isMobile={true} onClose={() => setIsOpen(false)} recentResult={recentResult} />
+                </motion.aside>
+              </>
+            )}
+          </AnimatePresence>
+        </>
+      )}
     </>
   );
 }

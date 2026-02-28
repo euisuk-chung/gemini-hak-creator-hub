@@ -97,6 +97,7 @@ export default function Home() {
       // 인메모리 스토어 초기화(핫 리로드 등) 대비: 클라이언트에도 캐시
       try {
         sessionStorage.setItem(`result-${data.id}`, JSON.stringify(data));
+        sessionStorage.setItem("lastResultId", data.id);
       } catch {
         // sessionStorage 쓰기 실패는 무시 (private 모드 등)
       }
