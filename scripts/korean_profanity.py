@@ -118,6 +118,7 @@ DIRECT_SWEAR_PATTERNS = [
     re.compile(r"병신"),
     re.compile(r"지랄"),
     re.compile(r"꺼져|닥쳐|꺼지"),
+    re.compile(r"좆"), 
 ]
 
 # ─── Mockery / Sarcasm Patterns (v2: tightened) ───────────────────
@@ -128,6 +129,7 @@ SARCASM_PATTERNS = [
     re.compile(r"ㅋ{10,}"),               # v2: raised from 5 to 10
     re.compile(r"실화\?{2,}"),
     re.compile(r"이걸?\s*왜\s*올[리림].*\?"),
+    re.compile(r"ㅋㅋ+|ㅎㅎ+|\^\^"),
 ]
 
 # ─── Consumer Attack Patterns (v2: new) ───────────────────────────
@@ -145,6 +147,8 @@ THREAT_PATTERNS = [
     re.compile(r"죽어|뒤져|뒤질"),
     re.compile(r"찾아간다|찾아갈"),
     re.compile(r"패[버]린다|패줄까"),
+    re.compile(r"패죽"),
+    re.compile(r"찢어|불질러"), 
     re.compile(r"신상\s*(까|턴|공개)"),
     re.compile(r"자살\s*(해|하|좀)"),
 ]
@@ -165,6 +169,8 @@ PERSONAL_ATTACK_PATTERNS = [
     re.compile(r"찐따"),
     re.compile(r"인성\s*(쓰레기|문제|봐)"),
     re.compile(r"재능\s*(없|이\s*없)"),
+    re.compile(r"역겹|토나"), 
+    re.compile(r"(너는|너가|쟤는|저새끼|저년|저놈).{0,8}(병신|멍청|한심|쓰레기)")
 ]
 
 # ─── Belittling Patterns (v2: new) ─────────────────────────────────
@@ -177,6 +183,7 @@ BELITTLING_PATTERNS = [
     re.compile(r"노답"),
     re.compile(r"저능"),
     re.compile(r"무뇌"),
+    re.compile(r"또라이"),
     re.compile(r"답답하[다네]"),
 ]
 
@@ -208,6 +215,7 @@ HATE_SPEECH_PATTERNS = [
     re.compile(r"김치녀|된장녀"),
     re.compile(r".+충$"),
     re.compile(r"페미|꼴페미"),
+    re.compile(r"여자는\s*원래|남자는\s*원래"),
 ]
 
 HATE_SPEECH_NEGATIVE_PATTERNS = [
@@ -253,7 +261,7 @@ GENERATION_HATE_PATTERNS = [
 SPAM_PATTERNS = [
     re.compile(r"https?://", re.IGNORECASE),
     re.compile(r"구독.*해\s*주"),
-    re.compile(r"홍보|이벤트|당첨"),
+    re.compile(r"홍보|이벤트|당첨|코인|투자|돈벌|www\."),
 ]
 
 # ─── Rule Definitions ──────────────────────────────────────────────
