@@ -1,0 +1,284 @@
+﻿@prefix nvc:  <http://example.org/nvc#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+##############################
+# Ontology for Toxic Comment Detection
+# Based on data/raw/message.txt (Malicious Comment Ontology v2)
+##############################
+
+nvc:Comment a owl:Class .
+nvc:Author a owl:Class .
+nvc:Target a owl:Class .
+nvc:ToxicityAssessment a owl:Class .
+nvc:ToxicDomain a owl:Class .
+nvc:ToxicCategory a owl:Class .
+nvc:ToxicSubType a owl:Class .
+nvc:LexicalIndicator a owl:Class .
+nvc:CategoryRelation a owl:Class .
+
+##############################
+# Properties
+##############################
+
+nvc:commentText a owl:DatatypeProperty ; rdfs:domain nvc:Comment ; rdfs:range xsd:string .
+nvc:hasKeyword a owl:DatatypeProperty ; rdfs:domain nvc:Comment ; rdfs:range xsd:string .
+
+nvc:writtenBy a owl:ObjectProperty ; rdfs:domain nvc:Comment ; rdfs:range nvc:Author .
+nvc:targets a owl:ObjectProperty ; rdfs:domain nvc:Comment ; rdfs:range nvc:Target .
+nvc:hasAssessment a owl:ObjectProperty ; rdfs:domain nvc:Comment ; rdfs:range nvc:ToxicityAssessment .
+nvc:mentionsIndicator a owl:ObjectProperty ; rdfs:domain nvc:Comment ; rdfs:range nvc:LexicalIndicator .
+
+nvc:detectedDomain a owl:ObjectProperty ; rdfs:domain nvc:ToxicityAssessment ; rdfs:range nvc:ToxicDomain .
+nvc:detectedCategory a owl:ObjectProperty ; rdfs:domain nvc:ToxicityAssessment ; rdfs:range nvc:ToxicCategory .
+nvc:detectedSubType a owl:ObjectProperty ; rdfs:domain nvc:ToxicityAssessment ; rdfs:range nvc:ToxicSubType .
+
+nvc:belongsToDomain a owl:ObjectProperty ; rdfs:domain nvc:ToxicCategory ; rdfs:range nvc:ToxicDomain .
+nvc:belongsToCategory a owl:ObjectProperty ; rdfs:domain nvc:ToxicSubType ; rdfs:range nvc:ToxicCategory .
+nvc:hasIndicator a owl:ObjectProperty ; rdfs:domain nvc:ToxicCategory ; rdfs:range nvc:LexicalIndicator .
+
+nvc:relationFrom a owl:ObjectProperty ; rdfs:domain nvc:CategoryRelation ; rdfs:range nvc:ToxicCategory .
+nvc:relationTo a owl:ObjectProperty ; rdfs:domain nvc:CategoryRelation ; rdfs:range nvc:ToxicCategory .
+
+nvc:relationType a owl:DatatypeProperty ; rdfs:domain nvc:CategoryRelation ; rdfs:range xsd:string .
+nvc:severityModifier a owl:DatatypeProperty ; rdfs:domain nvc:CategoryRelation ; rdfs:range xsd:decimal .
+nvc:relationDescription a owl:DatatypeProperty ; rdfs:domain nvc:CategoryRelation ; rdfs:range xsd:string .
+
+nvc:indicatorText a owl:DatatypeProperty ; rdfs:domain nvc:LexicalIndicator ; rdfs:range xsd:string .
+
+nvc:label a owl:DatatypeProperty ; rdfs:domain nvc:ToxicityAssessment ; rdfs:range xsd:string .
+nvc:confidence a owl:DatatypeProperty ; rdfs:domain nvc:ToxicityAssessment ; rdfs:range xsd:decimal .
+nvc:reason a owl:DatatypeProperty ; rdfs:domain nvc:ToxicityAssessment ; rdfs:range xsd:string .
+
+nvc:minSeverity a owl:DatatypeProperty ; rdfs:domain nvc:ToxicCategory ; rdfs:range xsd:integer .
+nvc:maxSeverity a owl:DatatypeProperty ; rdfs:domain nvc:ToxicCategory ; rdfs:range xsd:integer .
+
+##############################
+# Domains (from message.txt)
+##############################
+
+nvc:VERBAL_ABUSE a nvc:ToxicDomain .
+nvc:PERSONAL_TARGETING a nvc:ToxicDomain .
+nvc:GROUP_TARGETING a nvc:ToxicDomain .
+nvc:BEHAVIORAL a nvc:ToxicDomain .
+nvc:CONTENT_ABUSE a nvc:ToxicDomain .
+
+##############################
+# Categories (10 core)
+##############################
+
+nvc:PROFANITY a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:VERBAL_ABUSE ;
+  nvc:minSeverity 20 ;
+  nvc:maxSeverity 70 .
+
+nvc:BLAME a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:PERSONAL_TARGETING ;
+  nvc:minSeverity 20 ;
+  nvc:maxSeverity 65 .
+
+nvc:MOCKERY a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:PERSONAL_TARGETING ;
+  nvc:minSeverity 20 ;
+  nvc:maxSeverity 65 .
+
+nvc:PERSONAL_ATTACK a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:PERSONAL_TARGETING ;
+  nvc:minSeverity 40 ;
+  nvc:maxSeverity 90 .
+
+nvc:HATE_SPEECH a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:GROUP_TARGETING ;
+  nvc:minSeverity 40 ;
+  nvc:maxSeverity 95 .
+
+nvc:THREAT a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:BEHAVIORAL ;
+  nvc:minSeverity 50 ;
+  nvc:maxSeverity 100 .
+
+nvc:SEXUAL a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:BEHAVIORAL ;
+  nvc:minSeverity 35 ;
+  nvc:maxSeverity 90 .
+
+nvc:DISCRIMINATION a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:GROUP_TARGETING ;
+  nvc:minSeverity 25 ;
+  nvc:maxSeverity 75 .
+
+nvc:FAN_WAR a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:GROUP_TARGETING ;
+  nvc:minSeverity 20 ;
+  nvc:maxSeverity 75 .
+
+nvc:SPAM a nvc:ToxicCategory ;
+  nvc:belongsToDomain nvc:CONTENT_ABUSE ;
+  nvc:minSeverity 10 ;
+  nvc:maxSeverity 40 .
+
+##############################
+# SubTypes (selected, message.txt aligned)
+##############################
+
+nvc:DIRECT_SWEAR a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PROFANITY .
+nvc:CHOSUNG_SWEAR a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PROFANITY .
+nvc:MORPHED_SWEAR a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PROFANITY .
+nvc:SLANG_SWEAR a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PROFANITY .
+
+nvc:BASELESS_CRITICISM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:BLAME .
+nvc:DEFAMATION a nvc:ToxicSubType ; nvc:belongsToCategory nvc:BLAME .
+nvc:CONTENT_BASHING a nvc:ToxicSubType ; nvc:belongsToCategory nvc:BLAME .
+
+nvc:SARCASM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:MOCKERY .
+nvc:RIDICULE a nvc:ToxicSubType ; nvc:belongsToCategory nvc:MOCKERY .
+nvc:CYNICAL_EMOJI a nvc:ToxicSubType ; nvc:belongsToCategory nvc:MOCKERY .
+nvc:CONSUMER_ATTACK a nvc:ToxicSubType ; nvc:belongsToCategory nvc:MOCKERY .
+
+nvc:APPEARANCE_ATTACK a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PERSONAL_ATTACK .
+nvc:ABILITY_ATTACK a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PERSONAL_ATTACK .
+nvc:CHARACTER_ATTACK a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PERSONAL_ATTACK .
+nvc:PRIVACY_INVASION a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PERSONAL_ATTACK .
+nvc:BELITTLING a nvc:ToxicSubType ; nvc:belongsToCategory nvc:PERSONAL_ATTACK .
+
+nvc:GENDER_HATE a nvc:ToxicSubType ; nvc:belongsToCategory nvc:HATE_SPEECH .
+nvc:RACIAL_HATE a nvc:ToxicSubType ; nvc:belongsToCategory nvc:HATE_SPEECH .
+nvc:SEXUALITY_HATE a nvc:ToxicSubType ; nvc:belongsToCategory nvc:HATE_SPEECH .
+nvc:RELIGION_HATE a nvc:ToxicSubType ; nvc:belongsToCategory nvc:HATE_SPEECH .
+nvc:POLITICAL_SLUR a nvc:ToxicSubType ; nvc:belongsToCategory nvc:HATE_SPEECH .
+
+nvc:VIOLENCE_THREAT a nvc:ToxicSubType ; nvc:belongsToCategory nvc:THREAT .
+nvc:DOXXING_THREAT a nvc:ToxicSubType ; nvc:belongsToCategory nvc:THREAT .
+nvc:SELF_HARM_INCITE a nvc:ToxicSubType ; nvc:belongsToCategory nvc:THREAT .
+
+nvc:SEXUAL_OBJECTIFY a nvc:ToxicSubType ; nvc:belongsToCategory nvc:SEXUAL .
+nvc:SEXUAL_HARASS a nvc:ToxicSubType ; nvc:belongsToCategory nvc:SEXUAL .
+
+nvc:REGION_DISCRIM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:DISCRIMINATION .
+nvc:AGE_DISCRIM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:DISCRIMINATION .
+nvc:EDUCATION_DISCRIM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:DISCRIMINATION .
+nvc:APPEARANCE_DISCRIM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:DISCRIMINATION .
+nvc:GENERATION_HATE a nvc:ToxicSubType ; nvc:belongsToCategory nvc:DISCRIMINATION .
+
+nvc:FANDOM_VS_FANDOM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:FAN_WAR .
+nvc:ORGANIZED_ANTI a nvc:ToxicSubType ; nvc:belongsToCategory nvc:FAN_WAR .
+nvc:COMPARISON_ATTACK a nvc:ToxicSubType ; nvc:belongsToCategory nvc:FAN_WAR .
+nvc:DEFECTION_INCITE a nvc:ToxicSubType ; nvc:belongsToCategory nvc:FAN_WAR .
+
+nvc:AD_SPAM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:SPAM .
+nvc:REPETITIVE_SPAM a nvc:ToxicSubType ; nvc:belongsToCategory nvc:SPAM .
+nvc:CLICKBAIT a nvc:ToxicSubType ; nvc:belongsToCategory nvc:SPAM .
+
+##############################
+# Category Relations (from message.txt)
+##############################
+
+nvc:rel_001 a nvc:CategoryRelation ;
+  nvc:relationFrom nvc:PROFANITY ;
+  nvc:relationTo nvc:PERSONAL_ATTACK ;
+  nvc:relationType "AMPLIFIES" ;
+  nvc:severityModifier "15"^^xsd:decimal ;
+  nvc:relationDescription "Profanity + Personal Attack increases toxicity severity." .
+
+nvc:rel_002 a nvc:CategoryRelation ;
+  nvc:relationFrom nvc:PROFANITY ;
+  nvc:relationTo nvc:THREAT ;
+  nvc:relationType "AMPLIFIES" ;
+  nvc:severityModifier "20"^^xsd:decimal ;
+  nvc:relationDescription "Profanity + Threat indicates higher execution risk." .
+
+nvc:rel_003 a nvc:CategoryRelation ;
+  nvc:relationFrom nvc:MOCKERY ;
+  nvc:relationTo nvc:PERSONAL_ATTACK ;
+  nvc:relationType "AMPLIFIES" ;
+  nvc:severityModifier "10"^^xsd:decimal ;
+  nvc:relationDescription "Mockery often escalates psychological harm when targeting persons." .
+
+nvc:rel_004 a nvc:CategoryRelation ;
+  nvc:relationFrom nvc:BLAME ;
+  nvc:relationTo nvc:THREAT ;
+  nvc:relationType "ESCALATES_TO" ;
+  nvc:severityModifier "15"^^xsd:decimal ;
+  nvc:relationDescription "Sustained blame can escalate to threat." .
+
+nvc:rel_005 a nvc:CategoryRelation ;
+  nvc:relationFrom nvc:DISCRIMINATION ;
+  nvc:relationTo nvc:HATE_SPEECH ;
+  nvc:relationType "ESCALATES_TO" ;
+  nvc:severityModifier "10"^^xsd:decimal ;
+  nvc:relationDescription "Discrimination may escalate into hate speech." .
+
+##############################
+# Indicators (for LLM and rule-based hints)
+##############################
+
+nvc:ind_001 a nvc:LexicalIndicator ; nvc:indicatorText "병신" .
+nvc:ind_002 a nvc:LexicalIndicator ; nvc:indicatorText "멍청" .
+nvc:ind_003 a nvc:LexicalIndicator ; nvc:indicatorText "한심" .
+nvc:ind_004 a nvc:LexicalIndicator ; nvc:indicatorText "개새끼" .
+nvc:ind_005 a nvc:LexicalIndicator ; nvc:indicatorText "시발" .
+nvc:ind_006 a nvc:LexicalIndicator ; nvc:indicatorText "죽어" .
+nvc:ind_007 a nvc:LexicalIndicator ; nvc:indicatorText "꺼져" .
+nvc:ind_008 a nvc:LexicalIndicator ; nvc:indicatorText "찾아간다" .
+nvc:ind_009 a nvc:LexicalIndicator ; nvc:indicatorText "신상" .
+nvc:ind_010 a nvc:LexicalIndicator ; nvc:indicatorText "주작" .
+nvc:ind_011 a nvc:LexicalIndicator ; nvc:indicatorText "이딴" .
+nvc:ind_012 a nvc:LexicalIndicator ; nvc:indicatorText "뭘 이딴 걸 올렸냐" .
+nvc:ind_013 a nvc:LexicalIndicator ; nvc:indicatorText "관종" .
+nvc:ind_014 a nvc:LexicalIndicator ; nvc:indicatorText "틀딱" .
+nvc:ind_015 a nvc:LexicalIndicator ; nvc:indicatorText "급식충" .
+nvc:ind_016 a nvc:LexicalIndicator ; nvc:indicatorText "혐오" .
+nvc:ind_017 a nvc:LexicalIndicator ; nvc:indicatorText "차별" .
+nvc:ind_018 a nvc:LexicalIndicator ; nvc:indicatorText "성희롱" .
+nvc:ind_019 a nvc:LexicalIndicator ; nvc:indicatorText "ㅋㅋ" .
+nvc:ind_020 a nvc:LexicalIndicator ; nvc:indicatorText "ㅎ" .
+
+nvc:PROFANITY nvc:hasIndicator nvc:ind_001, nvc:ind_004, nvc:ind_005, nvc:ind_011 .
+nvc:MOCKERY nvc:hasIndicator nvc:ind_003, nvc:ind_013, nvc:ind_019, nvc:ind_020 .
+nvc:PERSONAL_ATTACK nvc:hasIndicator nvc:ind_002, nvc:ind_003, nvc:ind_012 .
+nvc:THREAT nvc:hasIndicator nvc:ind_006, nvc:ind_007, nvc:ind_008, nvc:ind_009 .
+nvc:DISCRIMINATION nvc:hasIndicator nvc:ind_014, nvc:ind_015, nvc:ind_017 .
+nvc:HATE_SPEECH nvc:hasIndicator nvc:ind_016, nvc:ind_017 .
+
+##############################
+# Example comments and assessments
+##############################
+
+nvc:comment_0001 a nvc:Comment ;
+  nvc:commentText "뭘 이딴 걸 올렸냐?" ;
+  nvc:hasKeyword "이딴" ;
+  nvc:hasKeyword "올렸냐" ;
+  nvc:mentionsIndicator nvc:ind_011, nvc:ind_012 ;
+  nvc:hasAssessment nvc:assessment_0001 .
+
+nvc:assessment_0001 a nvc:ToxicityAssessment ;
+  nvc:label "악플" ;
+  nvc:confidence "0.88"^^xsd:decimal ;
+  nvc:reason "비하 표현과 공격적 문체가 결합된 개인 대상 공격." ;
+  nvc:detectedDomain nvc:PERSONAL_TARGETING ;
+  nvc:detectedCategory nvc:PERSONAL_ATTACK, nvc:MOCKERY ;
+  nvc:detectedSubType nvc:BELITTLING, nvc:RIDICULE .
+
+nvc:comment_0002 a nvc:Comment ;
+  nvc:commentText "의견은 다르지만 설명은 잘 봤어요." ;
+  nvc:hasAssessment nvc:assessment_0002 .
+
+nvc:assessment_0002 a nvc:ToxicityAssessment ;
+  nvc:label "비악플" ;
+  nvc:confidence "0.95"^^xsd:decimal ;
+  nvc:reason "명시적 공격/비하/위협 표현이 없고 중립적 의견 제시." .
+
+nvc:comment_0003 a nvc:Comment ;
+  nvc:commentText "계속 그러면 신상 털린다." ;
+  nvc:mentionsIndicator nvc:ind_009 ;
+  nvc:hasAssessment nvc:assessment_0003 .
+
+nvc:assessment_0003 a nvc:ToxicityAssessment ;
+  nvc:label "악플" ;
+  nvc:confidence "0.93"^^xsd:decimal ;
+  nvc:reason "신상 노출을 암시하는 위협 발화." ;
+  nvc:detectedDomain nvc:BEHAVIORAL ;
+  nvc:detectedCategory nvc:THREAT ;
+  nvc:detectedSubType nvc:DOXXING_THREAT .

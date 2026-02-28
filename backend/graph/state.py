@@ -62,6 +62,10 @@ class PipelineState(TypedDict, total=False):
     safe_comments: list[CommentRaw]
     suspect_comments: list[CommentRaw]
 
+    # Retrieval
+    graph_evidences: NotRequired[List[Evidence]]
+    graph_retrieval_elapsed: NotRequired[float]
+
     # LLM 분석
     llm_results: list[dict]
 
