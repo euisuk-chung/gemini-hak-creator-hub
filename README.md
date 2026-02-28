@@ -6,7 +6,7 @@ Gemini AI로 YouTube 댓글을 분석하여 악성 댓글을 자동 식별하고
 
 ## 핵심 기술
 
-- **Gemini 2.0 Flash** — 댓글 독성 분석 (한국어 특화, JSON 구조화 출력)
+- **Gemini 2.5 Flash** — 댓글 독성 분석 (한국어 특화, JSON 구조화 출력)
 - **YouTube Data API v3** — 댓글/영상 정보 수집
 - **Next.js 16** — 풀스택 프레임워크 (App Router + API Routes)
 
@@ -23,7 +23,7 @@ cd frontend && npm install && npm run dev
 ```bash
 YOUTUBE_API_KEY=your_youtube_api_key
 GOOGLE_API_KEY=your_google_api_key
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 자세한 내용은 [AGENT.md](AGENT.md) 참조.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/layout/Sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +26,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={`${geistSans.variable} antialiased`}>{children}</body>
+      <head>
+        <link
+          rel="stylesheet"
+          as="style"
+          crossOrigin="anonymous"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+        />
+      </head>
+      <body className={`${geistSans.variable} antialiased`} style={{ fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+        <Sidebar />
+        <div className="lg:pl-[260px]">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }

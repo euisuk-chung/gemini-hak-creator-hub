@@ -50,7 +50,37 @@ export async function POST(request: Request) {
     }
 
     // 3. Gemini 분석
-    const geminiResult = await analyzeComments(rawComments, geminiApiKey);
+    let geminiResult;
+    try {
+      geminiResult = await analyzeComments(rawComments, geminiApiKey);
+    } catch (error: any) {
+      const errorMessage = error?.message || String(error);
+      
+      // 모델을 찾을 수 없음 에러 특별 처리
+      if (errorMessage.includes('MODEL_NOT_FOUND') || errorMessage.includes('404') || errorMessage.includes('no longer available')) {
+        return NextResponse.json(
+          { 
+            error: 'Gemini 모델을 찾을 수 없습니다.',
+            errorType: 'MODEL_NOT_FOUND',
+            details: '지정한 모델이 더 이상 사용할 수 없거나 존재하지 않습니다. 다음을 확인해주세요:\n1. .env 파일의 GEMINI_MODEL 값 확인\n2. 최신 모델명으로 업데이트 (예: gemini-1.5-flash, gemini-2.5-flash)\n3. Google AI Studio에서 사용 가능한 모델 확인: https://aistudio.google.com'
+          },
+          { status: 404 }
+        );
+      }
+      
+      // 할당량 초과 에러 특별 처리
+      if (errorMessage.includes('QUOTA_EXCEEDED') || errorMessage.includes('quota') || errorMessage.includes('429')) {
+        return NextResponse.json(
+          { 
+            error: 'Gemini API 할당량이 초과되었습니다.',
+            errorType: 'QUOTA_EXCEEDED',
+            details: '무료 티어의 일일/분당 할당량이 모두 소진되었습니다. 다음 중 하나를 시도해주세요:\n1. 잠시 후 다시 시도 (할당량이 리셋될 때까지 대기)\n2. 다른 Gemini API 키 사용\n3. Google Cloud Console에서 할당량 확인: https://ai.dev/rate-limit'
+          },
+          { status: 429 }
+        );
+      }
+      throw error;
+    }
 
     // 4. 결과 조합
     const comments: CommentAnalysis[] = rawComments.map((raw) => {
