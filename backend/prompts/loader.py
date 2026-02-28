@@ -1,6 +1,6 @@
 """프롬프트 템플릿 로더.
 
-templates/ 디렉토리에서 .txt 파일을 읽어 반환한다.
+templates/ 디렉토리에서 .md 파일을 읽어 반환한다.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ def load_template(name: str) -> str:
     Raises:
         FileNotFoundError: 해당 템플릿이 없을 때.
     """
-    path = _TEMPLATES_DIR / f"{name}.txt"
+    path = _TEMPLATES_DIR / f"{name}.md"
     if not path.exists():
         raise FileNotFoundError(f"프롬프트 템플릿 없음: {path}")
     return path.read_text(encoding="utf-8").strip()
