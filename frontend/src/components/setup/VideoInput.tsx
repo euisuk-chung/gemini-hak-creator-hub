@@ -80,8 +80,8 @@ export default function VideoInput({
   }, [videoUrl, youtubeApiKey]);
 
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-stone-600 mb-1.5">
+    <div className="space-y-2 sm:space-y-3">
+      <label className="block text-xs sm:text-sm font-medium text-stone-600 mb-1 sm:mb-1.5">
         YouTube 영상 URL
       </label>
       <input
@@ -89,33 +89,33 @@ export default function VideoInput({
         value={videoUrl}
         onChange={(e) => onVideoUrlChange(e.target.value)}
         placeholder="https://www.youtube.com/watch?v=..."
-        className="w-full px-4 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent bg-white"
+        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-stone-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent bg-white"
       />
 
       {previewLoading && (
-        <div className="flex items-center gap-2 text-xs text-stone-400">
+        <div className="flex items-center gap-2 text-[10px] sm:text-xs text-stone-400">
           <span className="animate-spin">⏳</span> 영상 정보 확인 중...
         </div>
       )}
 
       {previewError && (
-        <p className="text-xs text-red-500">{previewError}</p>
+        <p className="text-[10px] sm:text-xs text-red-500">{previewError}</p>
       )}
 
       {preview && (
-        <div className="flex gap-3 p-3 bg-stone-50 rounded-xl">
+        <div className="flex gap-2 sm:gap-3 p-2.5 sm:p-3 bg-stone-50 rounded-lg sm:rounded-xl">
           {preview.thumbnailUrl && (
             <img
               src={preview.thumbnailUrl}
               alt={preview.title}
-              className="w-24 h-16 object-cover rounded-lg shrink-0"
+              className="w-20 h-14 sm:w-24 sm:h-16 object-cover rounded-lg shrink-0"
             />
           )}
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-stone-700 line-clamp-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs sm:text-sm font-medium text-stone-700 line-clamp-2">
               {preview.title}
             </p>
-            <p className="text-xs text-stone-400 mt-1">
+            <p className="text-[10px] sm:text-xs text-stone-400 mt-0.5 sm:mt-1">
               {preview.channelTitle}
             </p>
           </div>

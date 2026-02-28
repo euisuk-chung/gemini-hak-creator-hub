@@ -1,10 +1,79 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
-  --accent: #7c3aed;
+  /* ─── Core Brand Colors ─── */
+  --background: #f5f5f7;
+  --foreground: #0d0d14;
+  --surface: #ffffff;
+
+  /* Brand Purple */
+  --accent: #6d28d9;
+  --accent-hover: #5b21b6;
   --accent-light: #ede9fe;
+  --accent-muted: #ddd6fe;
+
+  /* Sidebar (Dark Theme) */
+  --sidebar-bg: #0d0d1a;
+  --sidebar-text: #a8a8c0;
+  --sidebar-text-active: #ffffff;
+  --sidebar-active-bg: rgba(109, 40, 217, 0.25);
+  --sidebar-active-border: #6d28d9;
+  --sidebar-logo-text: #ffffff;
+
+  /* Semantic Colors */
+  --danger: #dc2626;
+  --danger-light: #fef2f2;
+  --danger-border: #fecaca;
+  --warning: #d97706;
+  --warning-light: #fffbeb;
+  --warning-border: #fde68a;
+  --success: #059669;
+  --success-light: #ecfdf5;
+  --info: #2563eb;
+  --info-light: #eff6ff;
+
+  /* Borders & Surfaces */
+  --border-color: #e4e4e9;
+  --border-strong: #d0d0d8;
+  --surface-2: #f8f8fb;
+  --surface-3: #f0f0f5;
+
+  /* Typography */
+  --text-primary: #0d0d14;
+  --text-secondary: #4b4b63;
+  --text-muted: #8a8aab;
+  --text-placeholder: #b0b0c8;
+
+  /* Spacing System */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  /* Typography Scale */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --sidebar-width-mobile: 260px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.05);
 }
 
 @theme inline {
@@ -12,11 +81,63 @@
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
   --color-accent-light: var(--accent-light);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-border: var(--border-color);
+  --color-text-muted: var(--text-muted);
+  --color-surface: var(--surface);
   --font-sans: var(--font-geist-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Pretendard', var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ─── Focus Ring ─── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Utility ─── */
+.sidebar-layout {
+  padding-left: var(--sidebar-width);
+}
+
+@media (max-width: 1023px) {
+  .sidebar-layout {
+    padding-left: 0;
+  }
 }

@@ -45,10 +45,27 @@ async function analyzeBatch(
 
   const userMessage = `다음 YouTube 댓글들을 분석해주세요:\n\n${JSON.stringify(input, null, 2)}`;
 
-  const result = await model.generateContent(userMessage);
-  const text = result.response.text();
+  try {
+    const result = await model.generateContent(userMessage);
+    const text = result.response.text();
 
-  return JSON.parse(text) as GeminiResponse;
+    return JSON.parse(text) as GeminiResponse;
+  } catch (error: any) {
+    // 에러 메시지 분석
+    const errorMessage = error?.message || String(error);
+    
+    // 할당량 초과 에러 감지
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Quota')) {
+      throw new Error('QUOTA_EXCEEDED: Gemini API 할당량이 초과되었습니다. 잠시 후 다시 시도하거나 다른 API 키를 사용해주세요.');
+    }
+    
+    // 모델을 찾을 수 없음 에러 감지 (404)
+    if (errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('no longer available')) {
+      throw new Error('MODEL_NOT_FOUND: 지정한 Gemini 모델을 찾을 수 없습니다. 모델명을 확인하거나 최신 모델로 업데이트해주세요.');
+    }
+    
+    throw error;
+  }
 }
 
 /** Gemini로 댓글 독성 분석 (배치 처리) */
@@ -57,7 +74,7 @@ export async function analyzeComments(
   geminiApiKey: string
 ): Promise<GeminiResponse> {
   const genAI = new GoogleGenerativeAI(geminiApiKey);
-  const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   const model = genAI.getGenerativeModel({
     model: modelName,
     systemInstruction: TOXICITY_ANALYSIS_PROMPT,
@@ -74,10 +91,22 @@ export async function analyzeComments(
     return analyzeBatch(comments, model);
   }
 
-  // 여러 배치 병렬 처리
-  const batchResults = await Promise.all(
-    batches.map((batch) => analyzeBatch(batch, model))
-  );
+  // 여러 배치 순차 처리 (할당량 초과 방지)
+  const batchResults: GeminiResponse[] = [];
+  for (const batch of batches) {
+    try {
+      const result = await analyzeBatch(batch, model);
+      batchResults.push(result);
+    } catch (error: any) {
+      // 할당량 초과 에러는 즉시 전파
+      if (error?.message?.includes('QUOTA_EXCEEDED')) {
+        throw error;
+      }
+      // 다른 에러는 로깅하고 계속 진행
+      console.error('배치 분석 실패:', error);
+      throw error;
+    }
+  }
 
   // 결과 통합
   const allComments = batchResults.flatMap((r) => r.comments);
