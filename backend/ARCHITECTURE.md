@@ -372,6 +372,108 @@ flowchart TD
 
 ---
 
+## 노드별 입출력과 카테고리 합산 상세
+
+각 노드가 state에서 **무엇을 읽고**, **무엇을 내보내는지** 명세.
+
+### prescreen 노드
+
+**읽기**: `comments`
+**쓰기**: `prescreen_results`, `safe_comments`, `suspect_comments`
+
+Rule Engine이 탐지할 수 있는 카테고리 (9종, 정규식 규칙 존재):
+
+| 규칙 그룹 | 출력 카테고리 | 탐지 예시 |
+|-----------|-------------|-----------|
+| 초성/변형/직접 욕설 | `PROFANITY` | ㅅㅂ, 시1발, 병신 |
+| 반어법, 소비자 비하 | `MOCKERY` | "와 잘하신다~", 호구 |
+| 위협 표현 | `THREAT` | 죽어, 찾아간다 |
+| 외모/능력 공격, 비하 | `PERSONAL_ATTACK` | 못생김, 멍청, 관종 |
+| 비난 패턴 | `BLAME` | "~해서 망한" |
+| 팬덤 갈등 | `FAN_WAR` | 빠순이, 탈덕 |
+| 성별/정치 혐오 | `HATE_SPEECH` | 한남, 빨갱이 |
+| 지역/세대 차별 | `DISCRIMINATION` | 촌놈, 꼰대, 틀딱 |
+| 광고/링크 | `SPAM` | URL, 구독해주세요 |
+
+**Rule이 탐지 불가**: `SEXUAL` — 성적 표현 규칙 없음. LLM만 탐지 가능.
+
+### analyze 노드
+
+**읽기**: `suspect_comments`, `transcript`
+**쓰기**: `llm_results`
+
+LLM이 반환하는 필드:
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `toxicity_score` | int (0-100) | AI 독성 점수 |
+| `toxicity_level` | str | AI 판단 레벨 |
+| `categories` | list[str] | AI 분류 카테고리 (10종 전체 가능) |
+| `explanation` | str | 해당 점수를 부여한 이유 (한국어) |
+| `suggestion` | str or null | 크리에이터 대응 제안 (moderate 이상만) |
+
+LLM은 10종 전체를 반환할 수 있으며, Rule이 못 잡는 `SEXUAL`과 맥락 의존적 `BLAME`, `MOCKERY`를 추가로 탐지.
+
+### validate 노드 — 합산 상세
+
+**읽기**: `safe_comments`, `suspect_comments`, `prescreen_results`, `llm_results`
+**쓰기**: `tagged_comments`, `summary`
+
+#### Safe 댓글 (LLM 스킵)
+
+Rule 결과만 사용. 변환 없이 그대로:
+
+```text
+score       = prescreen_results[cid].toxicity_score
+categories  = prescreen_results[cid].matched_categories
+explanation = "" (Rule은 설명 없음)
+source      = "rule_only"
+```
+
+#### Suspect 댓글 — score 합산
+
+```text
+merged   = round(ai_score × 0.7 + rule_score × 0.3)
+final    = max(merged, ai_score - 10)       ← AI 하한선
+final    = min(final, 100)                  ← 상한 클램프
+```
+
+#### Suspect 댓글 — categories 합산 (union)
+
+```text
+final_categories = unique(ai_categories + rule_categories)
+```
+
+AI 카테고리를 우선 배치하고, Rule이 추가로 잡은 카테고리를 뒤에 붙인 뒤 중복 제거.
+
+| 댓글 | rule_categories | ai_categories | final_categories |
+|------|----------------|---------------|-----------------|
+| "ㅅㅂ 병신아" | [PROFANITY, PERSONAL_ATTACK] | [PROFANITY, BLAME, PERSONAL_ATTACK] | [PROFANITY, BLAME, PERSONAL_ATTACK] |
+| "와 잘하신다~ ㅋㅋ" | [MOCKERY] | [MOCKERY, BLAME] | [MOCKERY, BLAME] |
+| "몸매 ㄷㄷ 직캠 더" | [] (규칙 없음) | [SEXUAL] | [SEXUAL] |
+| "한남충 ㅅㅂ 뒤져" | [HATE_SPEECH, PROFANITY, THREAT] | [HATE_SPEECH, PROFANITY, THREAT] | [HATE_SPEECH, PROFANITY, THREAT] |
+| "꼰대 호구 ㅋㅋ" | [DISCRIMINATION, MOCKERY] | [DISCRIMINATION, MOCKERY, BLAME] | [DISCRIMINATION, MOCKERY, BLAME] |
+
+#### Suspect 댓글 — 나머지 필드
+
+```text
+toxicity_level = final_score 기준 재계산 (AI의 level을 쓰지 않음)
+explanation    = LLM의 explanation 사용
+suggestion     = LLM의 suggestion 사용
+source         = "llm+rule"
+```
+
+#### LLM 실패 시 폴백
+
+```text
+score       = rule_score (Rule 결과 그대로)
+categories  = rule_categories
+explanation = "LLM 분석 실패: {에러 메시지}"
+source      = "rule_only"
+```
+
+---
+
 ## Rule Engine 상세
 
 10개 카테고리 × 15개 탐지 규칙. `scripts/korean_profanity.py` 재사용.
