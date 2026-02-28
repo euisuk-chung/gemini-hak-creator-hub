@@ -21,6 +21,11 @@ def analyze_node(state: PipelineState) -> dict:
     """LLM 분석: suspect_comments를 하나씩 태깅."""
     suspect_comments = state.get("suspect_comments", [])
     transcript = state.get("transcript", "")
+    video_title = state.get("video_title", "")
+    prescreen_results = state.get("prescreen_results", [])
+
+    # prescreen 결과를 comment_id로 인덱싱
+    prescreen_map = {pr["comment_id"]: pr for pr in prescreen_results}
 
     if not suspect_comments:
         return {"llm_results": []}
@@ -30,7 +35,16 @@ def analyze_node(state: PipelineState) -> dict:
 
     for comment in suspect_comments:
         try:
-            user_prompt = build_user_prompt(comment["text"], transcript)
+            # Rule이 사전 탐지한 카테고리를 레퍼런스로 전달
+            pr = prescreen_map.get(comment["comment_id"])
+            rule_categories = pr["matched_categories"] if pr else []
+
+            user_prompt = build_user_prompt(
+                comment["text"],
+                transcript,
+                video_title=video_title,
+                rule_categories=rule_categories if rule_categories else None,
+            )
             messages = [
                 SystemMessage(content=SYSTEM_PROMPT),
                 HumanMessage(content=user_prompt),
