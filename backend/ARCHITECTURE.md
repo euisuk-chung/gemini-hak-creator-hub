@@ -47,7 +47,7 @@ graph TB
     end
 
     API --> EP1 & EP2
-    EP1 --> LangGraph
+    EP1 --> FT
     EP2 -->|단일 댓글 래핑| PS
 
     FT -->|자막 수집| YT_TR
@@ -163,6 +163,41 @@ suspect 댓글만 Gemini에 보낸다. **POC에서는 1개씩 호출.**
   - `toxicity_score` (0-100), `toxicity_level`, `categories[]`, `explanation`, `suggestion`
 - **폴백**: LLM 호출 실패 시 (API 키 없음, 네트워크 오류 등) Rule 결과만 사용.
 
+**Transcript 컨텍스트 처리:**
+
+LLM에 전달하는 transcript는 최대 2000자로 제한한다.
+전체가 2000자 이하면 그대로 전달하고, 초과 시 **3등분 균등 샘플링**:
+
+```text
+전체 transcript (예: 6000자)
+├── 앞 1/3 (0~666자)      ← 영상 도입부, 주제 소개
+├── 중간 1/3 (2667~3333자) ← 핵심 내용
+└── 끝 1/3 (5334~6000자)   ← 마무리, 결론
+```
+
+왜 앞부분만 자르지 않는가:
+
+- 도입부만 가져오면 핵심 내용과 결론이 누락됨
+- 댓글은 영상 중반~후반 내용에 반응하는 경우가 많음
+- 3등분 샘플링으로 영상 전체 흐름을 커버
+
+최종 LLM 입력 형태:
+
+```text
+[SystemMessage] 10개 카테고리 정의 + 점수 기준 + 한국어 탐지 규칙
+
+[HumanMessage]
+[영상 자막 맥락]
+(앞 ~666자)
+... (중략) ...
+(중간 ~666자)
+... (중략) ...
+(끝 ~666자)
+
+[분석 대상 댓글]
+ㅅㅂ 진짜 못하네 병신아
+```
+
 #### 5. `validate` — 교차검증 + 최종 태깅
 
 Rule과 LLM 결과를 합쳐서 최종 점수를 산출한다.
@@ -207,52 +242,72 @@ flowchart LR
         VU["video_url"]
     end
 
-    subgraph Fetch
+    subgraph Step1["fetch_transcript"]
         VID["video_id"]
         TR["transcript"]
+    end
+
+    subgraph Step2["fetch_comments"]
         CM["comments"]
     end
 
-    subgraph Prescreen
+    subgraph Step3["prescreen"]
         PR["prescreen_results"]
         SC["safe_comments"]
         SU["suspect_comments"]
     end
 
-    subgraph LLM
+    subgraph Step4["analyze"]
+        SP["3등분 샘플링"]
         LLM_R["llm_results"]
     end
 
-    subgraph Output
+    subgraph Step5["validate"]
         TC["tagged_comments"]
         SM["summary"]
     end
 
     VU --> VID
     VU --> TR
-    VU --> CM
+    VID --> CM
     CM --> PR
     PR --> SC
     PR --> SU
-    SU --> LLM_R
+    TR --> SP
+    SU --> SP
+    SP --> LLM_R
     SC --> TC
     LLM_R --> TC
+    PR --> TC
     TC --> SM
 ```
+
+**핵심 흐름 설명:**
+
+1. `video_url` → `fetch_transcript`가 video_id 추출 + 자막 수집 (순차 첫 번째)
+2. `video_id` → `fetch_comments`가 댓글 수집 (순차 두 번째, video_id에 의존)
+3. `comments` → `prescreen`이 Rule 분석 후 safe/suspect 분리
+4. `transcript` + `suspect_comments` → `analyze`가 3등분 샘플링 후 LLM에 맥락+댓글 전달
+5. `safe_comments` + `llm_results` + `prescreen_results` → `validate`가 교차검증 후 최종 태깅
+
+**validate가 읽는 state 필드:**
+- `safe_comments` — rule_only로 태깅
+- `suspect_comments` + `llm_results` — AI×0.7 + Rule×0.3 합산
+- `prescreen_results` — Rule 점수/카테고리를 comment_id로 조회
 
 **State 필드별 설명:**
 
 | 단계 | 필드 | 타입 | 설명 |
 |------|------|------|------|
 | Input | `video_url` | `str` | 사용자가 입력한 YouTube URL |
-| Fetch | `video_id` | `str` | URL에서 추출한 11자 video ID |
+| fetch_transcript | `video_id` | `str` | URL에서 추출한 11자 video ID |
 | | `transcript` | `str` | 영상 자막 전체 텍스트 (없으면 빈 문자열) |
-| | `comments` | `CommentRaw[]` | YouTube에서 수집한 원본 댓글 목록 |
-| Prescreen | `prescreen_results` | `PrescreenResult[]` | 각 댓글의 Rule 분석 결과 (score, categories, patterns) |
+| fetch_comments | `comments` | `CommentRaw[]` | YouTube에서 수집한 원본 댓글 목록 |
+| prescreen | `prescreen_results` | `PrescreenResult[]` | 각 댓글의 Rule 분석 결과 (score, categories, patterns) |
 | | `safe_comments` | `CommentRaw[]` | Rule에서 안전 판정된 댓글 (LLM 스킵 대상) |
 | | `suspect_comments` | `CommentRaw[]` | LLM 분석이 필요한 댓글 |
-| LLM | `llm_results` | `dict[]` | Gemini가 반환한 구조화 분석 결과 |
-| Output | `tagged_comments` | `TaggedComment[]` | 최종 태깅 완료된 전체 댓글 |
+| analyze | `llm_results` | `dict[]` | Gemini가 반환한 구조화 분석 결과 |
+| validate | `tagged_comments` | `TaggedComment[]` | 최종 태깅 완료된 전체 댓글 |
 | | `summary` | `dict` | 집계 통계 (독성 비율, 카테고리 분포, skip ratio 등) |
 
 ---
@@ -314,6 +369,108 @@ flowchart TD
 | "와 진짜 잘하신다~ㅋㅋ" | score=30, MOCKERY | score=45, MOCKERY | score=41, moderate, [MOCKERY] |
 | "영상 잘 봤습니다" | score=0 (safe → LLM 스킵) | — | score=0, safe, rule_only |
 | "죽여버린다 ㅋㅋ" | score=65, THREAT | score=75, THREAT+MOCKERY | score=72, severe, [THREAT, MOCKERY] |
+
+---
+
+## 노드별 입출력과 카테고리 합산 상세
+
+각 노드가 state에서 **무엇을 읽고**, **무엇을 내보내는지** 명세.
+
+### prescreen 노드
+
+**읽기**: `comments`
+**쓰기**: `prescreen_results`, `safe_comments`, `suspect_comments`
+
+Rule Engine이 탐지할 수 있는 카테고리 (9종, 정규식 규칙 존재):
+
+| 규칙 그룹 | 출력 카테고리 | 탐지 예시 |
+|-----------|-------------|-----------|
+| 초성/변형/직접 욕설 | `PROFANITY` | ㅅㅂ, 시1발, 병신 |
+| 반어법, 소비자 비하 | `MOCKERY` | "와 잘하신다~", 호구 |
+| 위협 표현 | `THREAT` | 죽어, 찾아간다 |
+| 외모/능력 공격, 비하 | `PERSONAL_ATTACK` | 못생김, 멍청, 관종 |
+| 비난 패턴 | `BLAME` | "~해서 망한" |
+| 팬덤 갈등 | `FAN_WAR` | 빠순이, 탈덕 |
+| 성별/정치 혐오 | `HATE_SPEECH` | 한남, 빨갱이 |
+| 지역/세대 차별 | `DISCRIMINATION` | 촌놈, 꼰대, 틀딱 |
+| 광고/링크 | `SPAM` | URL, 구독해주세요 |
+
+**Rule이 탐지 불가**: `SEXUAL` — 성적 표현 규칙 없음. LLM만 탐지 가능.
+
+### analyze 노드
+
+**읽기**: `suspect_comments`, `transcript`
+**쓰기**: `llm_results`
+
+LLM이 반환하는 필드:
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `toxicity_score` | int (0-100) | AI 독성 점수 |
+| `toxicity_level` | str | AI 판단 레벨 |
+| `categories` | list[str] | AI 분류 카테고리 (10종 전체 가능) |
+| `explanation` | str | 해당 점수를 부여한 이유 (한국어) |
+| `suggestion` | str or null | 크리에이터 대응 제안 (moderate 이상만) |
+
+LLM은 10종 전체를 반환할 수 있으며, Rule이 못 잡는 `SEXUAL`과 맥락 의존적 `BLAME`, `MOCKERY`를 추가로 탐지.
+
+### validate 노드 — 합산 상세
+
+**읽기**: `safe_comments`, `suspect_comments`, `prescreen_results`, `llm_results`
+**쓰기**: `tagged_comments`, `summary`
+
+#### Safe 댓글 (LLM 스킵)
+
+Rule 결과만 사용. 변환 없이 그대로:
+
+```text
+score       = prescreen_results[cid].toxicity_score
+categories  = prescreen_results[cid].matched_categories
+explanation = "" (Rule은 설명 없음)
+source      = "rule_only"
+```
+
+#### Suspect 댓글 — score 합산
+
+```text
+merged   = round(ai_score × 0.7 + rule_score × 0.3)
+final    = max(merged, ai_score - 10)       ← AI 하한선
+final    = min(final, 100)                  ← 상한 클램프
+```
+
+#### Suspect 댓글 — categories 합산 (union)
+
+```text
+final_categories = unique(ai_categories + rule_categories)
+```
+
+AI 카테고리를 우선 배치하고, Rule이 추가로 잡은 카테고리를 뒤에 붙인 뒤 중복 제거.
+
+| 댓글 | rule_categories | ai_categories | final_categories |
+|------|----------------|---------------|-----------------|
+| "ㅅㅂ 병신아" | [PROFANITY, PERSONAL_ATTACK] | [PROFANITY, BLAME, PERSONAL_ATTACK] | [PROFANITY, BLAME, PERSONAL_ATTACK] |
+| "와 잘하신다~ ㅋㅋ" | [MOCKERY] | [MOCKERY, BLAME] | [MOCKERY, BLAME] |
+| "몸매 ㄷㄷ 직캠 더" | [] (규칙 없음) | [SEXUAL] | [SEXUAL] |
+| "한남충 ㅅㅂ 뒤져" | [HATE_SPEECH, PROFANITY, THREAT] | [HATE_SPEECH, PROFANITY, THREAT] | [HATE_SPEECH, PROFANITY, THREAT] |
+| "꼰대 호구 ㅋㅋ" | [DISCRIMINATION, MOCKERY] | [DISCRIMINATION, MOCKERY, BLAME] | [DISCRIMINATION, MOCKERY, BLAME] |
+
+#### Suspect 댓글 — 나머지 필드
+
+```text
+toxicity_level = final_score 기준 재계산 (AI의 level을 쓰지 않음)
+explanation    = LLM의 explanation 사용
+suggestion     = LLM의 suggestion 사용
+source         = "llm+rule"
+```
+
+#### LLM 실패 시 폴백
+
+```text
+score       = rule_score (Rule 결과 그대로)
+categories  = rule_categories
+explanation = "LLM 분석 실패: {에러 메시지}"
+source      = "rule_only"
+```
 
 ---
 
@@ -394,7 +551,7 @@ flowchart LR
 
 ## 디렉토리 구조
 
-```
+```text
 backend/
 ├── main.py                    # FastAPI 앱 + 엔드포인트
 ├── config.py                  # Settings (env vars, thresholds)
@@ -409,9 +566,17 @@ backend/
 │       ├── analyze.py         # Gemini LLM 구조화 출력
 │       └── validate.py        # Rule↔LLM 교차검증 + 최종 태깅
 │
-├── llm/                       # LLM 모듈
+├── prompts/                   # 프롬프트 관리 모듈
+│   ├── loader.py              # 템플릿 로더 (파일 → 문자열, LRU 캐싱)
+│   ├── builders.py            # 프롬프트 조립 (transcript 샘플링 + 빌드)
+│   └── templates/             # 프롬프트 원문 (.md)
+│       ├── comment_tagging_system.md      # 시스템 프롬프트
+│       ├── comment_analysis_user.md       # 유저 프롬프트 (맥락 포함)
+│       └── comment_analysis_user_no_context.md  # 유저 프롬프트 (맥락 없음)
+│
+├── llm/                       # LLM 클라이언트
 │   ├── gemini.py              # ChatGoogleGenerativeAI 설정
-│   ├── prompts.py             # 시스템 프롬프트 (한국어, transcript 맥락)
+│   ├── prompts.py             # → backend/prompts 리다이렉트 (하위 호환)
 │   └── schemas.py             # CommentTagging Pydantic 모델
 │
 └── models/

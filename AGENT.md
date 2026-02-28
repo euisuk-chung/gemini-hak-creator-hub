@@ -1,6 +1,7 @@
 # Creator Hub — AI 기반 YouTube 악성 댓글 분석 서비스
 
-> **Google Gemini Hackathon** 출품작 | K-POP × Social Good × AI
+> **Google Gemini Hackathon** 
+> 출품 카테고리: K-POP × Social Good × AI
 
 **DO NOT FIX FRONT-END** (/frontend)
 

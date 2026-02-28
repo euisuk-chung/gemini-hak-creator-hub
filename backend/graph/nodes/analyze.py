@@ -11,7 +11,7 @@ import logging
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from backend.llm.gemini import get_tagging_llm
-from backend.llm.prompts import SYSTEM_PROMPT, build_user_prompt
+from backend.prompts import SYSTEM_PROMPT, build_user_prompt
 from backend.graph.state import PipelineState
 
 logger = logging.getLogger(__name__)
