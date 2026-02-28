@@ -42,7 +42,8 @@
       "Bash(uv run python scripts/collect_comments.py --channel \"HYBE\")",
       "Bash(uv run python scripts/collect_comments.py --channel \"신의한수\")",
       "Bash(uv run python scripts/collect_comments.py --channel \"Mnet\")",
-      "Bash(uv run python scripts/collect_comments.py --channel \"풍월량\")"
+      "Bash(uv run python scripts/collect_comments.py --channel \"풍월량\")",
+      "Bash(bash scripts/run.sh)"
     ]
   }
 }
