@@ -1,0 +1,85 @@
+{
+  "channels": [
+    {
+      "name": "가로세로연구소",
+      "handle": "@hoverlab2018",
+      "channelId": "UC0M-_02RJqMlGTKUjF1WhJg",
+      "category": "사이버렉카",
+      "description": "연예인 폭로/논란. PROFANITY, PERSONAL_ATTACK, BLAME 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    },
+    {
+      "name": "연예뒤통령이진호",
+      "handle": "@behind_master",
+      "channelId": "UCbp1HhKUDmeI6enMXUxtgrg",
+      "category": "사이버렉카",
+      "description": "연예 뉴스/폭로. PROFANITY, BLAME 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    },
+    {
+      "name": "신의한수",
+      "handle": "@tubeshin",
+      "channelId": "UCgOLQwRv1r2m9mhE1tfsn3Q",
+      "category": "정치논란",
+      "description": "정치 논평. HATE_SPEECH, DISCRIMINATION, BLAME 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    },
+    {
+      "name": "침착맨",
+      "handle": "@chimchakman_official",
+      "channelId": "UCUj6rrhMTR9pipbAWBAMvUQ",
+      "category": "게임/스트리머",
+      "description": "게임/토크. PROFANITY, MOCKERY 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    },
+    {
+      "name": "풍월량",
+      "handle": "@hanryang1125",
+      "channelId": "UCyHvSKT_bLDYpkv1JjjsLAg",
+      "category": "게임/스트리머",
+      "description": "게임 방송. PROFANITY, MOCKERY 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    },
+    {
+      "name": "HYBE LABELS",
+      "handle": "@hybelabels",
+      "channelId": "UC3IZKseVpdzPSBaWxBxundA",
+      "category": "K-POP",
+      "description": "하이브 공식. FAN_WAR, PERSONAL_ATTACK 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    },
+    {
+      "name": "Mnet K-POP",
+      "handle": "@mnet",
+      "channelId": "UCbD8EppRX3ZwJSou-TVo90A",
+      "category": "K-POP",
+      "description": "서바이벌/팬투표. FAN_WAR, MOCKERY 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    },
+    {
+      "name": "슈카월드",
+      "handle": "@syukaworld",
+      "channelId": "UCsJ6RuBiTVWRX156FVbeaGg",
+      "category": "경제/시사",
+      "description": "경제/시사 해설. BLAME, MOCKERY 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    },
+    {
+      "name": "잇섭",
+      "handle": "@itsub",
+      "channelId": "UCdUcjkyZtf-1WJyPPiETF1g",
+      "category": "IT/테크",
+      "description": "IT 리뷰/테크. MOCKERY, BLAME 풍부",
+      "max_videos": 50,
+      "max_comments_per_video": 100
+    }
+  ]
+}

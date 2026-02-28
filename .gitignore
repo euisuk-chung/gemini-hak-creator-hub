@@ -1,0 +1,14 @@
+# env files
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Claude Code (개인 설정 — 스킬은 .agents/skills/ 에서 관리)
+.claude/
+
+# Collected data (large JSON files)
+scripts/data/
