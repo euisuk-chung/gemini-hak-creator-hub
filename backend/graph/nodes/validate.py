@@ -117,15 +117,17 @@ def validate_node(state: PipelineState) -> dict:
     category_dist: dict[str, int] = {}
     level_dist: dict[str, int] = {"safe": 0, "mild": 0, "moderate": 0, "severe": 0, "critical": 0}
     for t in tagged:
-        level_dist[t["toxicity_level"]] = level_dist.get(t["toxicity_level"], 0) + 1
-        for cat in t["categories"]:
-            if cat != "CLEAN":
-                category_dist[cat] = category_dist.get(cat, 0) + 1
+        # 심각도·유형 분포는 악성 댓글(score >= 30)만 집계
+        if t["toxicity_score"] >= 30:
+            level_dist[t["toxicity_level"]] = level_dist.get(t["toxicity_level"], 0) + 1
+            for cat in t["categories"]:
+                if cat != "CLEAN":
+                    category_dist[cat] = category_dist.get(cat, 0) + 1
 
     skipped = len(safe_comments)
     analyzed = len(suspect_comments)
 
-    clean_count = sum(1 for t in tagged if "CLEAN" in t["categories"])
+    clean_count = total - toxic_count
 
     summary = {
         "total_comments": total,

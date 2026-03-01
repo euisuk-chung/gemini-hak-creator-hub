@@ -43,7 +43,9 @@
       "Bash(uv run python scripts/collect_comments.py --channel \"신의한수\")",
       "Bash(uv run python scripts/collect_comments.py --channel \"Mnet\")",
       "Bash(uv run python scripts/collect_comments.py --channel \"풍월량\")",
-      "Bash(bash scripts/run.sh)"
+      "Bash(bash scripts/run.sh)",
+      "Bash(ngrok version)",
+      "Bash(find d:/repo/NVC-chat-talk/backend -name \"__pycache__\" -type d -exec rm -rf {} +)"
     ]
   }
 }

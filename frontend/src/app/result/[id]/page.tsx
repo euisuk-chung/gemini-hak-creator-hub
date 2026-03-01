@@ -191,7 +191,7 @@ function SeverityDistribution({ summary, total }: { summary: AnalysisResult["sum
       <SectionHeader
         eyebrow="심각도 분석"
         title="댓글 심각도 분포"
-        sub={`분석된 ${total.toLocaleString()}개 댓글의 독성 수준별 분류`}
+        sub={`악성 댓글 ${total.toLocaleString()}개의 독성 수준별 분류`}
       />
 
       {/* Stacked bar */}
@@ -348,7 +348,7 @@ function CommentCard({ comment }: { comment: AnalysisResult["maliciousComments"]
                 style={{ width: `${Math.min(comment.toxicityScore, 100)}%`, background: color }}
               />
             </div>
-            <span className="text-xs font-bold flex-shrink-0" style={{ color }}>{comment.toxicityScore}%</span>
+            <span className="text-xs font-bold flex-shrink-0" style={{ color }}>{comment.toxicityScore}/100</span>
           </div>
 
           {/* Expand button */}
@@ -590,7 +590,7 @@ export default function ResultPage() {
                 <span style={{ color: riskConfig.heroText }}>&quot;{riskConfig.label}&quot; 수준</span>입니다
               </h1>
               <p className="text-sm" style={{ color: riskConfig.heroSubText }}>
-                {riskConfig.emoji} {result.totalComments.toLocaleString()}개 댓글 중 AI가 {result.analyzedComments.toLocaleString()}개 분석 완료
+                {riskConfig.emoji} 총 {result.totalComments.toLocaleString()}개 댓글 · AI 정밀 분석 {result.analyzedComments.toLocaleString()}개
               </p>
             </div>
           </div>
@@ -662,7 +662,7 @@ export default function ResultPage() {
               { label: "총 댓글", value: result.totalComments.toLocaleString(), sub: null, color: "var(--text-primary)", highlight: false },
               { label: "정상 댓글", value: cleanCount.toLocaleString(), sub: `${cleanPct}%`, color: "var(--success)", highlight: false },
               { label: "악성 댓글", value: toxicCount.toLocaleString(), sub: `${toxicPct}%`, color: "var(--danger)", highlight: true },
-              { label: "분석 댓글", value: result.analyzedComments.toLocaleString(), sub: null, color: "var(--text-secondary)", highlight: false },
+              { label: "AI 분석", value: result.analyzedComments.toLocaleString(), sub: null, color: "var(--text-secondary)", highlight: false },
             ].map((s, i) => (
               <div
                 key={s.label}
@@ -690,8 +690,8 @@ export default function ResultPage() {
           {/* AI Insight */}
           {summary.insight && <InsightCard insight={summary.insight} />}
 
-          {/* Severity Distribution */}
-          <SeverityDistribution summary={summary} total={result.analyzedComments} />
+          {/* Severity Distribution — 악성 댓글만 대상 */}
+          <SeverityDistribution summary={summary} total={toxicCount} />
 
           {/* Category Donut */}
           {categoryData.length > 0 && (
@@ -706,8 +706,9 @@ export default function ResultPage() {
               />
               {/* 도넛 + 레전드 레이아웃 */}
               {(() => {
-                // map 밖에서 한 번만 계산
-                const totalCategorySum = categoryData.reduce((s, d) => s + d.value, 0);
+                // 퍼센트 분모 = 카테고리 태그 합계 (DonutChart 슬라이스 비율과 일치시킴)
+                const categoryTotal = categoryData.reduce((s, d) => s + d.value, 0);
+                const categoryDenom = categoryTotal || 1;
                 return (
                   <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
 
@@ -726,9 +727,7 @@ export default function ResultPage() {
                         - w-full 제거: flex-1과 충돌하던 원인 */}
                     <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {[...categoryData].sort((a, b) => b.value - a.value).map((item) => {
-                        const pct = totalCategorySum > 0
-                          ? Math.min(Math.round((item.value / totalCategorySum) * 100), 100)
-                          : 0;
+                        const pct = Math.min(Math.round((item.value / categoryDenom) * 100), 100);
                         const isSelected = selectedCategory === item.id;
                         const isDimmed   = selectedCategory !== null && !isSelected;
                         return (

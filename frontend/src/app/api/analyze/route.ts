@@ -176,19 +176,25 @@ export async function POST(request: Request) {
     const cleanCount = bs.clean_comments;
     const round1 = (n: number) => Math.round(n * 10) / 10;
 
+    // 악성 댓글만의 평균 독성 점수 (전체 평균은 safe 댓글 때문에 희석됨)
+    const toxicOnly = comments.filter((c) => c.toxicityScore >= 30);
+    const overallToxicityScore = toxicOnly.length > 0
+      ? Math.round(toxicOnly.reduce((sum, c) => sum + c.toxicityScore, 0) / toxicOnly.length)
+      : 0;
+
     const result: AnalysisResult = {
       videoId: backend.video_id,
       videoTitle: backend.video_title || `YouTube 영상 (${backend.video_id})`,
       channelTitle: backend.channel_title || '알 수 없는 채널',
       totalComments: total,
-      analyzedComments: comments.length,
+      analyzedComments: bs.pipeline_stats.llm_analyzed,
       toxicComments: toxicCount,
       toxicPercentage: round1(bs.toxic_percentage),
       cleanComments: cleanCount,
       cleanPercentage: round1(bs.clean_percentage),
       summary: {
-        overallToxicityScore: bs.average_toxicity_score,
-        toxicityLevel: getLevelFromScore(bs.average_toxicity_score),
+        overallToxicityScore,
+        toxicityLevel: getLevelFromScore(overallToxicityScore),
         safeCount,
         mildCount,
         moderateCount,
