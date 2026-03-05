@@ -268,9 +268,8 @@ function InsightCard({ insight }: { insight: string }) {
 // ─── Comment Card ─────────────────────────────────────────────
 function CommentCard({ comment }: { comment: AnalysisResult["maliciousComments"][0] }) {
   const [expanded, setExpanded] = useState(false);
-  const categoryObj = TOXICITY_CATEGORIES.find((c) => c.id === comment.categories[0]);
-  const categoryName = categoryObj?.nameKo || comment.categories[0] || "기타";
-  const color = categoryObj?.color || "#6b7280";
+  const primaryCategoryObj = TOXICITY_CATEGORIES.find((c) => c.id === comment.categories[0]);
+  const color = primaryCategoryObj?.color || "#6b7280";
   const hasDetail = !!(comment.explanation || comment.suggestion);
 
   return (
@@ -310,14 +309,22 @@ function CommentCard({ comment }: { comment: AnalysisResult["maliciousComments"]
                 </div>
               </div>
             </div>
-            {/* Category badge + Score */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span
-                className="text-xs font-bold px-2.5 py-1 rounded-full"
-                style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}
-              >
-                {categoryName}
-              </span>
+            {/* Category badges + Score */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+              {comment.categories.map((cat) => {
+                const catObj = TOXICITY_CATEGORIES.find((c) => c.id === cat);
+                const catColor = catObj?.color || "#6b7280";
+                const catName = catObj?.nameKo || cat;
+                return (
+                  <span
+                    key={cat}
+                    className="text-xs font-bold px-2.5 py-1 rounded-full"
+                    style={{ background: `${catColor}15`, color: catColor, border: `1px solid ${catColor}25` }}
+                  >
+                    {catName}
+                  </span>
+                );
+              })}
               <span
                 className="text-xs font-black tabular-nums w-9 h-7 flex items-center justify-center rounded-lg"
                 style={{ background: `${color}15`, color }}

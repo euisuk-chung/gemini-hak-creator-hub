@@ -12,3 +12,4 @@ __pycache__/
 
 # Collected data (large JSON files)
 scripts/data/
+nul
