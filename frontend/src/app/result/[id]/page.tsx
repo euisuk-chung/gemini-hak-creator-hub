@@ -597,7 +597,7 @@ export default function ResultPage() {
                 <span style={{ color: riskConfig.heroText }}>&quot;{riskConfig.label}&quot; 수준</span>입니다
               </h1>
               <p className="text-sm" style={{ color: riskConfig.heroSubText }}>
-                {riskConfig.emoji} 총 {result.totalComments.toLocaleString()}개 댓글 · AI 정밀 분석 {result.analyzedComments.toLocaleString()}개
+                {riskConfig.emoji} 최대 {result.totalComments.toLocaleString()}개 댓글 기준 · AI 정밀 분석 {result.analyzedComments.toLocaleString()}개
               </p>
             </div>
           </div>
@@ -666,10 +666,10 @@ export default function ResultPage() {
           {/* Stats row */}
           <div className="grid grid-cols-4 border-t" style={{ borderColor: "var(--border-color)" }}>
             {[
-              { label: "총 댓글", value: result.totalComments.toLocaleString(), sub: null, color: "var(--text-primary)", highlight: false },
+              { label: "분석 기준 댓글", value: result.totalComments.toLocaleString(), sub: "샘플링 기준", color: "var(--text-primary)", highlight: false },
               { label: "정상 댓글", value: cleanCount.toLocaleString(), sub: `${cleanPct}%`, color: "var(--success)", highlight: false },
               { label: "악성 댓글", value: toxicCount.toLocaleString(), sub: `${toxicPct}%`, color: "var(--danger)", highlight: true },
-              { label: "AI 분석", value: result.analyzedComments.toLocaleString(), sub: null, color: "var(--text-secondary)", highlight: false },
+              { label: "AI 정밀 분석", value: result.analyzedComments.toLocaleString(), sub: null, color: "var(--text-secondary)", highlight: false },
             ].map((s, i) => (
               <div
                 key={s.label}
